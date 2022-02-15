@@ -19,6 +19,7 @@
 package se.uu.ub.cora.fedora;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -49,7 +50,7 @@ public class FedoraTest {
 		assertEquals(factoredHttpHandler.requestMetod, "PUT");
 
 		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
-				"text/plain");
+				"text/plain;charset=utf-8");
 		factoredHttpHandler.MCR.assertParameters("setOutput", 0, fedoraXML);
 
 		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
@@ -59,28 +60,44 @@ public class FedoraTest {
 
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	@Test
 	public void testCreateNotFound() {
-		String fedoraXML = "some new metadata xml to send to storage";
+		String recordXML = "<somexml></somexml>";
 		String recordId = "someRecordId:001";
-		httpHandlerFactory.statusResponse = 404;
+		httpHandlerFactory.statusResponse = 500;
 
-		String returnResponse = fedora.create(recordId, fedoraXML);
+		try {
+			fedora.create(recordId, recordXML);
+		} catch (Exception exception) {
+			assertTrue(exception instanceof FedoraException);
+			assertEquals(exception.getMessage(),
+					"Error storing record in Fedora, recordId: someRecordId:001");
+		}
 
-		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
-
+		//
 		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
-		assertEquals(factoredHttpHandler.requestMetod, "PUT");
-
-		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
-				"text/plain");
-		factoredHttpHandler.MCR.assertParameters("setOutput", 0, fedoraXML);
 
 		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
 		factoredHttpHandler.MCR.assertMethodNotCalled("getResponseText");
 
-		// factoredHttpHandler.MCR.assertReturn("getResponseText", 0, returnResponse);
+	}
+
+	// TODO: Kolla om är detta vad vi vill att det ska hända när vi inte når URL. eller ska den
+	// hanteras i Storage
+	@Test
+	public void testCreateConnectionRefused() {
+		String recordXML = "<somexml></somexml>";
+		String recordId = "someRecordId:001";
+
+		httpHandlerFactory.throwExceptionRuntimeException = true;
+
+		try {
+			fedora.create(recordId, recordXML);
+		} catch (Exception exception) {
+			assertTrue(exception instanceof FedoraException);
+			assertEquals(exception.getMessage(),
+					"Error connecting to fedora, with url: " + baseUrl);
+		}
 
 	}
 }

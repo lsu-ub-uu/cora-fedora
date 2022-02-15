@@ -30,6 +30,7 @@ public class HttpHandlerSpy implements HttpHandler {
 	MethodCallRecorder MCR = new MethodCallRecorder();
 
 	public int statusResponse = 201;
+	public boolean throwExceptionRuntimeException = false;
 
 	@Override
 	public void setRequestMethod(String requestMetod) {
@@ -54,6 +55,9 @@ public class HttpHandlerSpy implements HttpHandler {
 	@Override
 	public void setOutput(String outputString) {
 		MCR.addCall("outputString", outputString);
+		if (throwExceptionRuntimeException) {
+			throw new RuntimeException("Some error from HttpHandlerSpy");
+		}
 	}
 
 	@Override

@@ -33,10 +33,17 @@ public class FedoraImp implements Fedora {
 
 	@Override
 	public String create(String recordId, String fedoraXML) {
+		// TODO: kolla att post finns inte innan vi skapar den. Annars för vi 204, vad betyder att
+		// den post har skapats som en version på en annan post. Det vill vi inte i create.
 		HttpHandler httpHandler = httpHandlerFactory.factor(baseUrl + recordId);
 		httpHandler.setRequestMethod("PUT");
-		httpHandler.setRequestProperty("Content-Type", "text/plain");
-		httpHandler.setOutput(fedoraXML);
+		httpHandler.setRequestProperty("Content-Type", "text/plain;charset=utf-8");
+		try {
+			httpHandler.setOutput(fedoraXML);
+		} catch (RuntimeException e) {
+			// TODO: handle exception
+			throw FedoraException.withMessage("Error connecting to fedora, with url: " + baseUrl);
+		}
 
 		throwErrorIfCreateNotOk(httpHandler, recordId);
 		return httpHandler.getResponseText();

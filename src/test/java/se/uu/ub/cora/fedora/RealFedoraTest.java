@@ -18,31 +18,37 @@
  */
 package se.uu.ub.cora.fedora;
 
-import se.uu.ub.cora.httphandler.HttpHandler;
+import static org.testng.Assert.assertEquals;
+
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
-import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
+import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 
-public class HttpHandlerFactorySpy implements HttpHandlerFactory {
+public class RealFedoraTest {
 
-	public String url;
-	public HttpHandlerSpy factoredHttpHandler;
+	private HttpHandlerFactory httpHandlerFactory;
+	private Fedora fedora;
+	private String baseUrl;
 
-	public int statusResponse = 201;
-	public boolean throwExceptionRuntimeException = false;
-
-	@Override
-	public HttpHandler factor(String url) {
-		this.url = url;
-		factoredHttpHandler = new HttpHandlerSpy();
-		factoredHttpHandler.statusResponse = statusResponse;
-		factoredHttpHandler.throwExceptionRuntimeException = throwExceptionRuntimeException;
-		return factoredHttpHandler;
+	@BeforeMethod
+	public void setUp() {
+		baseUrl = "http://lalvin-docker-fedora:8080/fcrepo/rest/";
+		// httpHandlerFactory = new HttpHandlerFactorySpy();
+		httpHandlerFactory = new HttpHandlerFactoryImp();
+		fedora = new FedoraImp(httpHandlerFactory, baseUrl);
 	}
 
-	@Override
-	public HttpMultiPartUploader factorHttpMultiPartUploader(String url) {
-		// TODO Auto-generated method stub
-		return null;
+	@Test
+	public void testCreateOk() {
+		String fedoraXML = "<trying></trying>";
+		String recordId = "someRecordId:001";
+
+		String returnResponse = fedora.create(recordId, fedoraXML);
+
+		assertEquals(returnResponse, "");
+
 	}
 
 }
