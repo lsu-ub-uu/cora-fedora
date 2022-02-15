@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,8 +16,17 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora;
 
-public interface FedoraReaderFactory {
-	FedoraReader factor(String baseUrl);
+public interface Fedora {
+
+	/**
+	 * Store record with recordid in Fedora
+	 */
+	String create(String recordId, String recordXml);
+
+	String read(String recordId);
+
+	String update(String recordId, String recordXml);
+
 }
