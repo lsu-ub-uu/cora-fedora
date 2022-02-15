@@ -21,7 +21,7 @@ package se.uu.ub.cora.fedora;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
-public class FedoraImp implements Fedora {
+public class FedoraImp implements FedoraWrapper {
 
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;

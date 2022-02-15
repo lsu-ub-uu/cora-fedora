@@ -29,7 +29,7 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 public class RealFedoraTest {
 
 	private HttpHandlerFactory httpHandlerFactory;
-	private Fedora fedora;
+	private FedoraWrapper fedora;
 	private String baseUrl;
 
 	@BeforeMethod

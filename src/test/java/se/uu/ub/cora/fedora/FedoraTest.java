@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 public class FedoraTest {
 
 	private HttpHandlerFactorySpy httpHandlerFactory;
-	private Fedora fedora;
+	private FedoraWrapper fedora;
 	private String baseUrl;
 
 	@BeforeMethod
