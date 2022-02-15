@@ -18,8 +18,12 @@
  */
 package se.uu.ub.cora.fedora;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
+import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
 
 public class FedoraImp implements FedoraWrapper {
 
@@ -32,42 +36,84 @@ public class FedoraImp implements FedoraWrapper {
 	}
 
 	@Override
-	public String create(String recordId, String fedoraXML) {
-		// TODO: kolla att post finns inte innan vi skapar den. Annars för vi 204, vad betyder att
-		// den post har skapats som en version på en annan post. Det vill vi inte i create.
-		HttpHandler httpHandler = httpHandlerFactory.factor(baseUrl + recordId);
-		httpHandler.setRequestMethod("PUT");
-		httpHandler.setRequestProperty("Content-Type", "text/plain;charset=utf-8");
-		try {
-			httpHandler.setOutput(fedoraXML);
-		} catch (RuntimeException e) {
-			// TODO: handle exception
-			throw FedoraException.withMessage("Error connecting to fedora, with url: " + baseUrl);
-		}
-
-		throwErrorIfCreateNotOk(httpHandler, recordId);
-		return httpHandler.getResponseText();
-
+	public void create(String recordId, String fedoraXML) {
+		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
+		int responseCode = callFedora(httpHandler);
+		throwErrorIfCreateNotOk(responseCode, recordId);
 	}
 
-	private void throwErrorIfCreateNotOk(HttpHandler httpHandler, String recordId) {
-		int responseCode = httpHandler.getResponseCode();
+	private void throwErrorIfCreateNotOk(int responseCode, String recordId) {
 		if (responseCode != 201) {
 			throw FedoraException
 					.withMessage("Error storing record in Fedora, recordId: " + recordId);
 		}
 	}
 
-	@Override
-	public String read(String recordId) {
-		// TODO Auto-generated method stub
-		return null;
+	private HttpHandler setupHttpHandlerForStore(String recordId, String fedoraXML) {
+		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
+		httpHandler.setRequestProperty("Content-Type", "text/plain;charset=utf-8");
+		httpHandler.setOutput(fedoraXML);
+		return httpHandler;
 	}
 
 	@Override
-	public String update(String recordId, String fedoraXML) {
-		// TODO Auto-generated method stub
-		return null;
+	public String read(String recordId) {
+		HttpHandler httpHandler = setUpHttpHandlerForRead(recordId);
+		int responseCode = callFedora(httpHandler);
+		throwErrorIfReadNotOk(responseCode, recordId);
+		return httpHandler.getResponseText();
+	}
+
+	private void throwErrorIfReadNotOk(int responseCode, String recordId) {
+		if (responseCode != 200) {
+			throw FedoraException
+					.withMessage("Error reading record from Fedora, recordId: " + recordId);
+		}
+	}
+
+	private HttpHandler setUpHttpHandlerForRead(String recordId) {
+		HttpHandler httpHandler = factorHttpHandler(recordId, "GET");
+		httpHandler.setRequestProperty("Accept", "text/plain;charset=utf-8");
+		return httpHandler;
+	}
+
+	private HttpHandler factorHttpHandler(String recordId, String requestMethod) {
+		HttpHandler httpHandler = httpHandlerFactory.factor(baseUrl + recordId);
+		httpHandler.setRequestMethod(requestMethod);
+		return httpHandler;
+	}
+
+	@Override
+	public void update(String recordId, String fedoraXML) {
+		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
+		int responseCode = callFedora(httpHandler);
+		throwErrorIfUpdateNotOk(responseCode, recordId);
+	}
+
+	private int callFedora(HttpHandler httpHandler) {
+		return httpHandler.getResponseCode();
+	}
+
+	private void throwErrorIfUpdateNotOk(int responseCode, String recordId) {
+		if (responseCode != 204) {
+			throw FedoraException
+					.withMessage("Error storing record in Fedora, recordId: " + recordId);
+		}
+	}
+
+	@Override
+	public void createBinary(String recordId, InputStream binary) {
+		HttpMultiPartUploader httpHandler = httpHandlerFactory
+				.factorHttpMultiPartUploader(baseUrl + recordId);
+		httpHandler.setRequestMethod("PUT");
+
+		try {
+			httpHandler.addFilePart("file", "someFileName", binary);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int responseCode = httpHandler.getResponseCode();
 	}
 
 }

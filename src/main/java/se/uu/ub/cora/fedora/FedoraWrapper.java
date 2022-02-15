@@ -18,6 +18,8 @@
  */
 package se.uu.ub.cora.fedora;
 
+import java.io.InputStream;
+
 public interface FedoraWrapper {
 
 	/**
@@ -26,13 +28,25 @@ public interface FedoraWrapper {
 	 * If there are problems while creating the record in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 * 
+	 * If there is any connection problem a RuntimeException will be thrown.
+	 * 
 	 * @param recordId
 	 *            identifier of the record to store
 	 * @param recordXml
 	 *            payload to store
 	 * @return Response text from fedora
 	 */
-	String create(String recordId, String recordXml);
+	void create(String recordId, String recordXml);
+
+	/**
+	 * Stores a new binary in Fedora
+	 * 
+	 * @param binaryId
+	 *            It is the identifier of the binary.
+	 * @param binary
+	 *            It is the binary file to store.
+	 */
+	void createBinary(String binaryId, InputStream binary);
 
 	/**
 	 * Reads a record from fedora using recordId
@@ -59,6 +73,6 @@ public interface FedoraWrapper {
 	 *            payload to store
 	 * @return Response text from fedora
 	 */
-	String update(String recordId, String recordXml);
+	void update(String recordId, String recordXml);
 
 }

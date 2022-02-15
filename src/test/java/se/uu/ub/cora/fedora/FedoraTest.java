@@ -19,7 +19,8 @@
 package se.uu.ub.cora.fedora;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import java.io.InputStream;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -29,6 +30,8 @@ public class FedoraTest {
 	private HttpHandlerFactorySpy httpHandlerFactory;
 	private FedoraWrapper fedora;
 	private String baseUrl;
+	private String recordXML = "<somexml></somexml>";
+	private String recordId = "someRecordId:001";
 
 	@BeforeMethod
 	public void setUp() {
@@ -39,65 +42,94 @@ public class FedoraTest {
 
 	@Test
 	public void testCreateOk() {
-		String fedoraXML = "some new metadata xml to send to storage";
-		String recordId = "someRecordId:001";
 
-		String returnResponse = fedora.create(recordId, fedoraXML);
+		fedora.create(recordId, recordXML);
 
 		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
-
 		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
 		assertEquals(factoredHttpHandler.requestMetod, "PUT");
-
 		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
 				"text/plain;charset=utf-8");
-		factoredHttpHandler.MCR.assertParameters("setOutput", 0, fedoraXML);
+		factoredHttpHandler.MCR.assertParameters("setOutput", 0, recordXML);
+		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
+	}
 
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	public void testCreateNotFound() {
+		httpHandlerFactory.statusResponse = 500;
+		fedora.create(recordId, recordXML);
+
+	}
+
+	@Test
+	public void testUpdateOk() {
+		httpHandlerFactory.statusResponse = 204;
+		fedora.update(recordId, recordXML);
+
+		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
+		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
+		assertEquals(factoredHttpHandler.requestMetod, "PUT");
+		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
+				"text/plain;charset=utf-8");
+		factoredHttpHandler.MCR.assertParameters("setOutput", 0, recordXML);
+		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
+	}
+
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	public void testUpdateError() {
+		httpHandlerFactory.statusResponse = 500;
+		fedora.update(recordId, recordXML);
+	}
+
+	@Test
+	public void testRead() {
+		httpHandlerFactory.statusResponse = 200;
+
+		String recordFromFedora = fedora.read(recordId);
+
+		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
+		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
+		assertEquals(factoredHttpHandler.requestMetod, "GET");
+		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Accept",
+				"text/plain;charset=utf-8");
 		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
 		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseText");
+		factoredHttpHandler.MCR.assertReturn("getResponseText", 0, recordFromFedora);
+	}
 
-		factoredHttpHandler.MCR.assertReturn("getResponseText", 0, returnResponse);
-
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error reading record from Fedora, recordId: someRecordId:001")
+	public void testReadRecordNotFound() {
+		httpHandlerFactory.statusResponse = 404;
+		fedora.read(recordId);
 	}
 
 	@Test
-	public void testCreateNotFound() {
-		String recordXML = "<somexml></somexml>";
-		String recordId = "someRecordId:001";
-		httpHandlerFactory.statusResponse = 500;
+	public void testCreateBinary() throws Exception {
 
-		try {
-			fedora.create(recordId, recordXML);
-		} catch (Exception exception) {
-			assertTrue(exception instanceof FedoraException);
-			assertEquals(exception.getMessage(),
-					"Error storing record in Fedora, recordId: someRecordId:001");
-		}
+		InputStream binary = new InputStreamSpy();
 
-		//
-		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
+		fedora.createBinary(recordId, binary);
 
-		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
-		factoredHttpHandler.MCR.assertMethodNotCalled("getResponseText");
+		httpHandlerFactory.MCR.assertParameters("factorHttpMultiPartUploader", 0,
+				baseUrl + recordId);
 
+		HttpMultiPartUploaderSpy httpMultiPartUploader = (HttpMultiPartUploaderSpy) httpHandlerFactory.MCR
+				.getReturnValue("factorHttpMultiPartUploader", 0);
+
+		httpMultiPartUploader.MCR.assertParameters("setRequestMethod", 0, "PUT");
+		// TODO: Vad är som skickas som parameter till addFilePart.
+		httpMultiPartUploader.MCR.assertParameters("addFilePart", 0, "file", "someFileName",
+				binary);
+
+		httpMultiPartUploader.MCR.assertMethodWasCalled("getResponseCode");
 	}
+	// TODO Below is the content store on file in Fedora
+	// Vad är skillnad mellan name och filename???
+	// Content-Disposition: form-data; name="file"; filename="someFileName"
+	// Content-Type: null
+	// Content-Transfer-Encoding: binary
 
-	// TODO: Kolla om är detta vad vi vill att det ska hända när vi inte når URL. eller ska den
-	// hanteras i Storage
-	@Test
-	public void testCreateConnectionRefused() {
-		String recordXML = "<somexml></somexml>";
-		String recordId = "someRecordId:001";
-
-		httpHandlerFactory.throwExceptionRuntimeException = true;
-
-		try {
-			fedora.create(recordId, recordXML);
-		} catch (Exception exception) {
-			assertTrue(exception instanceof FedoraException);
-			assertEquals(exception.getMessage(),
-					"Error connecting to fedora, with url: " + baseUrl);
-		}
-
-	}
 }

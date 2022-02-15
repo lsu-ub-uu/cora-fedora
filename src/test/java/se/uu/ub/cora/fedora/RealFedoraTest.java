@@ -20,6 +20,11 @@ package se.uu.ub.cora.fedora;
 
 import static org.testng.Assert.assertEquals;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -34,20 +39,45 @@ public class RealFedoraTest {
 
 	@BeforeMethod
 	public void setUp() {
-		baseUrl = "http://lalvin-docker-fedora:8080/fcrepo/rest/";
+		baseUrl = "http://alvin-docker-fedora:8080/fcrepo/rest/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
 		fedora = new FedoraImp(httpHandlerFactory, baseUrl);
 	}
 
-	@Test
+	@Test(enabled = false)
 	public void testCreateOk() {
 		String fedoraXML = "<trying></trying>";
-		String recordId = "someRecordId:001";
+		String recordId = "someRecordId:002";
 
-		String returnResponse = fedora.create(recordId, fedoraXML);
+		fedora.create(recordId, fedoraXML);
 
-		assertEquals(returnResponse, "");
+	}
+
+	@Test(enabled = false)
+	public void testReadOk() {
+		String fedoraXML = "<trying></trying>";
+		String recordId = "someRecordId:002";
+
+		String read = fedora.read(recordId);
+		assertEquals(read, "");
+
+	}
+
+	@Test
+	public void testCreateBinaryOk() {
+		String fedoraXML = "<trying></trying>";
+		String recordId = "someRecordId:007";
+
+		try {
+			File initialFile = new File("/home/pere/workspace/castle.jpg");
+			InputStream binary = new FileInputStream(initialFile);
+			fedora.createBinary(recordId, binary);
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

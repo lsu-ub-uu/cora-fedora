@@ -21,6 +21,7 @@ package se.uu.ub.cora.fedora;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 
@@ -29,6 +30,8 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 
 	public int statusResponse = 201;
 	public boolean throwExceptionRuntimeException = false;
+
+	MethodCallRecorder MCR = new MethodCallRecorder();
 
 	@Override
 	public HttpHandler factor(String url) {
@@ -41,8 +44,12 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 
 	@Override
 	public HttpMultiPartUploader factorHttpMultiPartUploader(String url) {
-		// TODO Auto-generated method stub
-		return null;
+		MCR.addCall("url", url);
+
+		HttpMultiPartUploader httpHandlerMultiPart = new HttpMultiPartUploaderSpy();
+
+		MCR.addReturned(httpHandlerMultiPart);
+		return httpHandlerMultiPart;
 	}
 
 }

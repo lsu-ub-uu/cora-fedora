@@ -18,30 +18,22 @@
  */
 package se.uu.ub.cora.fedora;
 
+import java.io.IOException;
 import java.io.InputStream;
 
-import se.uu.ub.cora.httphandler.HttpHandler;
+import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
-public class HttpHandlerSpy implements HttpHandler {
-
-	public String requestMetod;
+public class HttpMultiPartUploaderSpy implements HttpMultiPartUploader {
 
 	MethodCallRecorder MCR = new MethodCallRecorder();
-
-	public int statusResponse = 201;
-	public boolean throwExceptionRuntimeException = false;
-
-	@Override
-	public void setRequestMethod(String requestMetod) {
-		MCR.addCall("requestMetod", requestMetod);
-		this.requestMetod = requestMetod;
-	}
+	private int responseCode = 200;
+	private String responseText = "response text from spy";
 
 	@Override
 	public String getResponseText() {
 		MCR.addCall();
-		String responseText = "some response text";
+
 		MCR.addReturned(responseText);
 		return responseText;
 	}
@@ -49,45 +41,48 @@ public class HttpHandlerSpy implements HttpHandler {
 	@Override
 	public int getResponseCode() {
 		MCR.addCall();
-		MCR.addReturned(statusResponse);
-		return statusResponse;
-	}
 
-	@Override
-	public void setOutput(String outputString) {
-		MCR.addCall("outputString", outputString);
-		if (throwExceptionRuntimeException) {
-			throw new RuntimeException("Some error from HttpHandlerSpy");
-		}
-	}
-
-	@Override
-	public void setRequestProperty(String key, String value) {
-		MCR.addCall("key", key, "value", value);
-		// TODO Auto-generated method stub
+		MCR.addReturned(responseCode);
+		return responseCode;
 	}
 
 	@Override
 	public String getErrorText() {
-		// TODO Auto-generated method stub
-		return null;
+		MCR.addCall();
+
+		String returnedValue = "error from spy";
+		MCR.addReturned(returnedValue);
+		return returnedValue;
 	}
 
 	@Override
-	public void setStreamOutput(InputStream stream) {
-		// TODO Auto-generated method stub
+	public void addFormField(String name, String value) {
+		MCR.addCall("name", name, "value", value);
 
 	}
 
 	@Override
-	public String getHeaderField(String name) {
-		// TODO Auto-generated method stub
-		return null;
+	public void addFilePart(String fieldName, String fileName, InputStream stream)
+			throws IOException {
+		MCR.addCall("fieldName", fieldName, "fileName", fileName, "stream", stream);
+
 	}
 
 	@Override
-	public void setBasicAuthorization(String username, String password) {
-		// TODO Auto-generated method stub
+	public void addHeaderField(String name, String value) {
+		MCR.addCall("name", name, "value", value);
+
+	}
+
+	@Override
+	public void done() throws IOException {
+		MCR.addCall();
+
+	}
+
+	@Override
+	public void setRequestMethod(String requestMethod) {
+		MCR.addCall("requestMethod", requestMethod);
 
 	}
 
