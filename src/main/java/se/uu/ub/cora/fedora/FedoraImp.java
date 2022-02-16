@@ -25,6 +25,7 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraImp implements FedoraWrapper {
 
+	private static final int OK = 200;
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
 
@@ -37,13 +38,13 @@ public class FedoraImp implements FedoraWrapper {
 	public void create(String recordId, String fedoraXML) {
 		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
 		int responseCode = callFedora(httpHandler);
-		throwErrorIfCreateNotOk(responseCode, recordId);
+		throwErrorIfCreateNotOk(responseCode, recordId, "record");
 	}
 
-	private void throwErrorIfCreateNotOk(int responseCode, String recordId) {
+	private void throwErrorIfCreateNotOk(int responseCode, String recordId, String type) {
 		if (responseCode != 201) {
 			throw FedoraException
-					.withMessage("Error storing record in Fedora, recordId: " + recordId);
+					.withMessage("Error storing " + type + " in Fedora, recordId: " + recordId);
 		}
 	}
 
@@ -58,14 +59,14 @@ public class FedoraImp implements FedoraWrapper {
 	public String read(String recordId) {
 		HttpHandler httpHandler = setUpHttpHandlerForRead(recordId);
 		int responseCode = callFedora(httpHandler);
-		throwErrorIfReadNotOk(responseCode, recordId);
+		throwErrorIfReadNotOk(responseCode, recordId, "record");
 		return httpHandler.getResponseText();
 	}
 
-	private void throwErrorIfReadNotOk(int responseCode, String recordId) {
-		if (responseCode != 200) {
+	private void throwErrorIfReadNotOk(int responseCode, String recordId, String type) {
+		if (responseCode != OK) {
 			throw FedoraException
-					.withMessage("Error reading record from Fedora, recordId: " + recordId);
+					.withMessage("Error reading " + type + " from Fedora, recordId: " + recordId);
 		}
 	}
 
@@ -111,10 +112,7 @@ public class FedoraImp implements FedoraWrapper {
 	}
 
 	private void throwErrorIfCreateBinaryNotOk(String recordId, int responseCode) {
-		if (responseCode != 201) {
-			throw FedoraException
-					.withMessage("Error storing binary in Fedora, recordId: " + recordId);
-		}
+		throwErrorIfCreateNotOk(responseCode, recordId, "binary");
 	}
 
 	@Override
@@ -122,16 +120,13 @@ public class FedoraImp implements FedoraWrapper {
 		HttpHandler httpHandler = factorHttpHandler(recordId, "GET");
 		// httpHandler.setRequestProperty("Accept", "text/plain;charset=utf-8");
 		int responseCode = httpHandler.getResponseCode();
-		throwErrorIfReadBinaryNotOk(recordId, responseCode);
+		throwErrorIfReadBinaryNotOk(responseCode, recordId);
 		return httpHandler.getResponseBinary();
 
 	}
 
-	private void throwErrorIfReadBinaryNotOk(String recordId, int responseCode) {
-		if (responseCode != 200) {
-			throw FedoraException
-					.withMessage("Error reading binary from Fedora, recordId: " + recordId);
-		}
+	private void throwErrorIfReadBinaryNotOk(int responseCode, String recordId) {
+		throwErrorIfReadNotOk(responseCode, recordId, "binary");
 	}
 
 }
