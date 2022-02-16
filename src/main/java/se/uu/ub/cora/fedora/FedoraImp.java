@@ -18,12 +18,10 @@
  */
 package se.uu.ub.cora.fedora;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
-import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
 
 public class FedoraImp implements FedoraWrapper {
 
@@ -102,18 +100,38 @@ public class FedoraImp implements FedoraWrapper {
 	}
 
 	@Override
-	public void createBinary(String recordId, InputStream binary) {
-		HttpMultiPartUploader httpHandler = httpHandlerFactory
-				.factorHttpMultiPartUploader(baseUrl + recordId);
-		httpHandler.setRequestMethod("PUT");
+	public void createBinary(String recordId, InputStream binary, String contentType) {
+		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
+		httpHandler.setRequestProperty("Content-Type", contentType);
+		httpHandler.setStreamOutput(binary);
 
-		try {
-			httpHandler.addFilePart("file", "someFileName", binary);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		int responseCode = callFedora(httpHandler);
+		throwErrorIfCreateBinaryNotOk(recordId, responseCode);
+
+	}
+
+	private void throwErrorIfCreateBinaryNotOk(String recordId, int responseCode) {
+		if (responseCode != 201) {
+			throw FedoraException
+					.withMessage("Error storing binary in Fedora, recordId: " + recordId);
 		}
+	}
+
+	@Override
+	public InputStream readBinary(String recordId) {
+		HttpHandler httpHandler = factorHttpHandler(recordId, "GET");
+		// httpHandler.setRequestProperty("Accept", "text/plain;charset=utf-8");
 		int responseCode = httpHandler.getResponseCode();
+		throwErrorIfReadBinaryNotOk(recordId, responseCode);
+		return httpHandler.getResponseBinary();
+
+	}
+
+	private void throwErrorIfReadBinaryNotOk(String recordId, int responseCode) {
+		if (responseCode != 200) {
+			throw FedoraException
+					.withMessage("Error reading binary from Fedora, recordId: " + recordId);
+		}
 	}
 
 }

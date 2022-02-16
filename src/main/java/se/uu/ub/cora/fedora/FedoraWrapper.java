@@ -46,7 +46,7 @@ public interface FedoraWrapper {
 	 * @param binary
 	 *            It is the binary file to store.
 	 */
-	void createBinary(String binaryId, InputStream binary);
+	void createBinary(String recordId, InputStream binary, String binaryContentType);
 
 	/**
 	 * Reads a record from fedora using recordId
@@ -59,6 +59,15 @@ public interface FedoraWrapper {
 	 * @return record fecthed from fedora
 	 */
 	String read(String recordId);
+
+	/**
+	 * Reads binary from fedora using recorid as identifier.
+	 * 
+	 * @param recordId
+	 *            It is the identifier of the binary to be read.
+	 * @return InputStrem representation of the binary read from Fedora
+	 */
+	InputStream readBinary(String recordId);
 
 	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of

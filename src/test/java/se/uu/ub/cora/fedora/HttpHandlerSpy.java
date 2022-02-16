@@ -31,6 +31,7 @@ public class HttpHandlerSpy implements HttpHandler {
 
 	public int statusResponse = 201;
 	public boolean throwExceptionRuntimeException = false;
+	public InputStream inputStreamToRead = new InputStreamSpy();
 
 	@Override
 	public void setRequestMethod(String requestMetod) {
@@ -75,7 +76,7 @@ public class HttpHandlerSpy implements HttpHandler {
 
 	@Override
 	public void setStreamOutput(InputStream stream) {
-		// TODO Auto-generated method stub
+		MCR.addCall("stream", stream);
 
 	}
 
@@ -89,6 +90,14 @@ public class HttpHandlerSpy implements HttpHandler {
 	public void setBasicAuthorization(String username, String password) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public InputStream getResponseBinary() {
+		MCR.addCall();
+
+		MCR.addReturned(inputStreamToRead);
+		return inputStreamToRead;
 	}
 
 }

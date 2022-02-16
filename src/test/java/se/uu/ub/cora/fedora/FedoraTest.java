@@ -109,27 +109,55 @@ public class FedoraTest {
 	@Test
 	public void testCreateBinary() throws Exception {
 
+		httpHandlerFactory.statusResponse = 201;
 		InputStream binary = new InputStreamSpy();
+		String binaryContentType = "image/jpg";
 
-		fedora.createBinary(recordId, binary);
+		fedora.createBinary(recordId, binary, binaryContentType);
 
-		httpHandlerFactory.MCR.assertParameters("factorHttpMultiPartUploader", 0,
-				baseUrl + recordId);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		HttpHandlerSpy factoredHttpHandler = (HttpHandlerSpy) httpHandlerFactory.MCR
+				.getReturnValue("factor", 0);
 
-		HttpMultiPartUploaderSpy httpMultiPartUploader = (HttpMultiPartUploaderSpy) httpHandlerFactory.MCR
-				.getReturnValue("factorHttpMultiPartUploader", 0);
+		factoredHttpHandler.MCR.assertParameters("setRequestMethod", 0, "PUT");
+		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
+				binaryContentType);
+		factoredHttpHandler.MCR.assertParameters("setStreamOutput", 0, binary);
+		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
 
-		httpMultiPartUploader.MCR.assertParameters("setRequestMethod", 0, "PUT");
-		// TODO: Vad är som skickas som parameter till addFilePart.
-		httpMultiPartUploader.MCR.assertParameters("addFilePart", 0, "file", "someFileName",
-				binary);
-
-		httpMultiPartUploader.MCR.assertMethodWasCalled("getResponseCode");
 	}
-	// TODO Below is the content store on file in Fedora
-	// Vad är skillnad mellan name och filename???
-	// Content-Disposition: form-data; name="file"; filename="someFileName"
-	// Content-Type: null
-	// Content-Transfer-Encoding: binary
+
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error storing binary in Fedora, recordId: someRecordId:001")
+	public void testCreateBinaryErrorWhileStoring() {
+		httpHandlerFactory.statusResponse = 500;
+		InputStream binary = new InputStreamSpy();
+		fedora.createBinary(recordId, binary, "image/jpg");
+	}
+
+	@Test
+	public void testReadBinaryOk() throws Exception {
+		httpHandlerFactory.statusResponse = 200;
+
+		InputStream binaryFromFedora = fedora.readBinary(recordId);
+
+		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
+		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
+		assertEquals(factoredHttpHandler.requestMetod, "GET");
+		// factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Accept",
+		// "text/plain;charset=utf-8");
+		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
+		factoredHttpHandler.MCR.assertMethodNotCalled("getResponseText");
+		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseBinary");
+		factoredHttpHandler.MCR.assertReturn("getResponseBinary", 0, binaryFromFedora);
+	}
+
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error reading binary from Fedora, recordId: someRecordId:001")
+	public void testReadBinaryNotFound() {
+		httpHandlerFactory.statusResponse = 404;
+
+		fedora.readBinary(recordId);
+	}
 
 }

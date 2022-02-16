@@ -35,10 +35,12 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 
 	@Override
 	public HttpHandler factor(String url) {
+		MCR.addCall("url", url);
 		this.url = url;
 		factoredHttpHandler = new HttpHandlerSpy();
 		factoredHttpHandler.statusResponse = statusResponse;
 		factoredHttpHandler.throwExceptionRuntimeException = throwExceptionRuntimeException;
+		MCR.addReturned(factoredHttpHandler);
 		return factoredHttpHandler;
 	}
 
@@ -46,10 +48,8 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 	public HttpMultiPartUploader factorHttpMultiPartUploader(String url) {
 		MCR.addCall("url", url);
 
-		HttpMultiPartUploader httpHandlerMultiPart = new HttpMultiPartUploaderSpy();
-
-		MCR.addReturned(httpHandlerMultiPart);
-		return httpHandlerMultiPart;
+		MCR.addReturned(null);
+		return null;
 	}
 
 }

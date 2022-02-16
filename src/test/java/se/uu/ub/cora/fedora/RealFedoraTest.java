@@ -23,7 +23,10 @@ import static org.testng.Assert.assertEquals;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -48,7 +51,7 @@ public class RealFedoraTest {
 	@Test(enabled = false)
 	public void testCreateOk() {
 		String fedoraXML = "<trying></trying>";
-		String recordId = "someRecordId:002";
+		String recordId = "someRecordId:010";
 
 		fedora.create(recordId, fedoraXML);
 
@@ -56,23 +59,34 @@ public class RealFedoraTest {
 
 	@Test(enabled = false)
 	public void testReadOk() {
-		String fedoraXML = "<trying></trying>";
-		String recordId = "someRecordId:002";
+		String recordId = "someRecordId:010";
 
 		String read = fedora.read(recordId);
 		assertEquals(read, "");
 
 	}
 
-	@Test
+	@Test(enabled = false)
+	public void testReadBinary() throws IOException {
+		String recordId = "someRecordId:020";
+		File targetFile = new File("/home/pere/workspace/castle2.jpg");
+		OutputStream outStream = new FileOutputStream(targetFile);
+
+		InputStream binary = fedora.readBinary(recordId);
+
+		binary.transferTo(outStream);
+
+	}
+
+	@Test(enabled = false)
 	public void testCreateBinaryOk() {
-		String fedoraXML = "<trying></trying>";
-		String recordId = "someRecordId:007";
+		String recordId = "someRecordId:020";
 
 		try {
+			// File initialFile = new File("/home/madde/workspace/bild.jpg");
 			File initialFile = new File("/home/pere/workspace/castle.jpg");
 			InputStream binary = new FileInputStream(initialFile);
-			fedora.createBinary(recordId, binary);
+			fedora.createBinary(recordId, binary, "image/jpeg");
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

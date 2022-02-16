@@ -28,7 +28,7 @@
     <artifactId>fedora</artifactId>
     <version>2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>Fedora Converter</name>
+    <name>Fedora 6+</name>
 
     <properties>
 		<httphandler.version>2.5-SNAPSHOT</httphandler.version>
