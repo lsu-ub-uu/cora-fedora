@@ -16,10 +16,12 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.internal;
 
 import java.io.InputStream;
 
+import se.uu.ub.cora.fedora.FedoraException;
+import se.uu.ub.cora.fedora.FedoraWrapper;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 

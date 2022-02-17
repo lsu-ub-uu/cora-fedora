@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.internal;
 
 import static org.testng.Assert.assertEquals;
 
@@ -24,6 +24,10 @@ import java.io.InputStream;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import se.uu.ub.cora.fedora.FedoraException;
+import se.uu.ub.cora.fedora.FedoraWrapper;
+import se.uu.ub.cora.fedora.internal.FedoraImp;
 
 public class FedoraTest {
 

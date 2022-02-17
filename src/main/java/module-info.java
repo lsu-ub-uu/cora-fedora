@@ -3,9 +3,7 @@
  * system.
  */
 module se.uu.ub.cora.fedora {
-	requires java.xml;
-	requires transitive se.uu.ub.cora.httphandler;
-	requires transitive se.uu.ub.cora.data;
+	requires se.uu.ub.cora.httphandler;
 
 	exports se.uu.ub.cora.fedora;
 }
