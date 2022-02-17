@@ -27,9 +27,9 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.FedoraWrapper;
-import se.uu.ub.cora.fedora.internal.FedoraImp;
+import se.uu.ub.cora.fedora.internal.FedoraWrapperImp;
 
-public class FedoraTest {
+public class FedoraWrapperTest {
 
 	private HttpHandlerFactorySpy httpHandlerFactory;
 	private FedoraWrapper fedora;
@@ -41,7 +41,7 @@ public class FedoraTest {
 	public void setUp() {
 		baseUrl = "http://localhost:38088/fcrepo/rest/";
 		httpHandlerFactory = new HttpHandlerFactorySpy();
-		fedora = new FedoraImp(httpHandlerFactory, baseUrl);
+		fedora = new FedoraWrapperImp(httpHandlerFactory, baseUrl);
 	}
 
 	@Test

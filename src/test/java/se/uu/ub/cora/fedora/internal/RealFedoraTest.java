@@ -32,7 +32,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.fedora.FedoraWrapper;
-import se.uu.ub.cora.fedora.internal.FedoraImp;
+import se.uu.ub.cora.fedora.internal.FedoraWrapperImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 
@@ -47,7 +47,7 @@ public class RealFedoraTest {
 		baseUrl = "http://alvin-docker-fedora:8080/fcrepo/rest/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
-		fedora = new FedoraImp(httpHandlerFactory, baseUrl);
+		fedora = new FedoraWrapperImp(httpHandlerFactory, baseUrl);
 	}
 
 	@Test(enabled = false)

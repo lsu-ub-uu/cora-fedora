@@ -25,13 +25,13 @@ import se.uu.ub.cora.fedora.FedoraWrapper;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
-public class FedoraImp implements FedoraWrapper {
+public class FedoraWrapperImp implements FedoraWrapper {
 
 	private static final int OK = 200;
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
 
-	public FedoraImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
+	public FedoraWrapperImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.baseUrl = baseUrl;
 	}
