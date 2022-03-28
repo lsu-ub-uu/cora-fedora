@@ -20,13 +20,19 @@ package se.uu.ub.cora.fedora;
 
 import java.io.InputStream;
 
+/**
+ * FedoraWrapper is intended to define a interface in order to talk to Fedora 6+.
+ * 
+ * The implementation SHOULD be thread safe.
+ */
+
 public interface FedoraWrapper {
 
 	/**
 	 * Creates a record in fedora using recordId as id and recordXml as payload
 	 * 
-	 * If there are problems while creating the record in Fedora a {@link FedoraException} will be
-	 * thrown.
+	 * If a record with the same recordId is already stored in fedora a {@link FedoraException} will
+	 * be thrown.
 	 * 
 	 * If there is any connection problem a RuntimeException will be thrown.
 	 * 
