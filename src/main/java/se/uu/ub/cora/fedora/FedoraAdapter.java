@@ -26,7 +26,7 @@ import java.io.InputStream;
  * The implementation SHOULD be thread safe.
  */
 
-public interface FedoraWrapper {
+public interface FedoraAdapter {
 
 	/**
 	 * Creates a record in fedora using recordId as id and recordXml as payload

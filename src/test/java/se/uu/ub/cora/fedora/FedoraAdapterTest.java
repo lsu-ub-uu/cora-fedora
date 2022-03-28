@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora;
 
 import static org.testng.Assert.assertEquals;
 
@@ -25,14 +25,14 @@ import java.io.InputStream;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.fedora.FedoraException;
-import se.uu.ub.cora.fedora.FedoraWrapper;
-import se.uu.ub.cora.fedora.internal.FedoraWrapperImp;
+import se.uu.ub.cora.fedora.internal.HttpHandlerFactorySpy;
+import se.uu.ub.cora.fedora.internal.HttpHandlerSpy;
+import se.uu.ub.cora.fedora.internal.InputStreamSpy;
 
-public class FedoraWrapperTest {
+public class FedoraAdapterTest {
 
 	private HttpHandlerFactorySpy httpHandlerFactory;
-	private FedoraWrapper fedora;
+	private FedoraAdapter fedora;
 	private String baseUrl;
 	private String recordXML = "<somexml></somexml>";
 	private String recordId = "someRecordId:001";
@@ -41,7 +41,7 @@ public class FedoraWrapperTest {
 	public void setUp() {
 		baseUrl = "http://localhost:38088/fcrepo/rest/";
 		httpHandlerFactory = new HttpHandlerFactorySpy();
-		fedora = new FedoraWrapperImp(httpHandlerFactory, baseUrl);
+		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
 	}
 
 	@Test

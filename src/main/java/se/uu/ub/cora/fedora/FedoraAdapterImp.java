@@ -16,22 +16,20 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora;
 
 import java.io.InputStream;
 
-import se.uu.ub.cora.fedora.FedoraException;
-import se.uu.ub.cora.fedora.FedoraWrapper;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
-public class FedoraWrapperImp implements FedoraWrapper {
+public class FedoraAdapterImp implements FedoraAdapter {
 
 	private static final int OK = 200;
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
 
-	public FedoraWrapperImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
+	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.baseUrl = baseUrl;
 	}
@@ -129,6 +127,16 @@ public class FedoraWrapperImp implements FedoraWrapper {
 
 	private void throwErrorIfReadBinaryNotOk(int responseCode, String recordId) {
 		throwErrorIfReadNotOk(responseCode, recordId, "binary");
+	}
+
+	public String getBaseUrl() {
+		return baseUrl;
+		// TODO Auto-generated method stub
+
+	}
+
+	public HttpHandlerFactory getHttpHandlerFactory() {
+		return httpHandlerFactory;
 	}
 
 }

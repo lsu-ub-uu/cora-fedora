@@ -31,7 +31,7 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 	public int statusResponse = 201;
 	public boolean throwExceptionRuntimeException = false;
 
-	MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodCallRecorder MCR = new MethodCallRecorder();
 
 	@Override
 	public HttpHandler factor(String url) {

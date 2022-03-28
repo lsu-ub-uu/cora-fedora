@@ -27,7 +27,7 @@ public class HttpHandlerSpy implements HttpHandler {
 
 	public String requestMetod;
 
-	MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodCallRecorder MCR = new MethodCallRecorder();
 
 	public int statusResponse = 201;
 	public boolean throwExceptionRuntimeException = false;
