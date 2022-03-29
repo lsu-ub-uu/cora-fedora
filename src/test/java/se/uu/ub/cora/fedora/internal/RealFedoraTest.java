@@ -32,7 +32,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.fedora.FedoraAdapter;
-import se.uu.ub.cora.fedora.FedoraAdapterImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 
@@ -44,7 +43,7 @@ public class RealFedoraTest {
 
 	@BeforeMethod
 	public void setUp() {
-		baseUrl = "http://alvin-docker-fedora:8080/fcrepo/rest/";
+		baseUrl = "http://alvin-docker-fedora:808/fcrepo/rest/plats/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
@@ -52,10 +51,19 @@ public class RealFedoraTest {
 
 	@Test(enabled = false)
 	public void testCreateOk() {
-		String fedoraXML = "<trying></trying>";
-		String recordId = "someRecordId:010";
+		String fedoraXML = "<trying>hello</trying>";
+		String recordId = "someRecordId:012";
 
 		fedora.create(recordId, fedoraXML);
+
+	}
+
+	@Test(enabled = false)
+	public void testUpdateOk() {
+		String fedoraXML = "<trying>hello</trying>";
+		String recordId = "someRecordId:015n";
+
+		fedora.update(recordId, fedoraXML);
 
 	}
 

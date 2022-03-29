@@ -16,17 +16,26 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora;
 
-import java.io.IOException;
-import java.io.InputStream;
+public class FedoraConflictException extends RuntimeException {
 
-public class InputStreamSpy extends InputStream {
+	private static final long serialVersionUID = -255261285196817577L;
 
-	@Override
-	public int read() throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+	private FedoraConflictException(String message) {
+		super(message);
+	}
+
+	private FedoraConflictException(String message, Exception e) {
+		super(message, e);
+	}
+
+	public static FedoraConflictException withMessage(String message) {
+		return new FedoraConflictException(message);
+	}
+
+	public static FedoraConflictException withMessageAndException(String message, Exception e) {
+		return new FedoraConflictException(message, e);
 	}
 
 }

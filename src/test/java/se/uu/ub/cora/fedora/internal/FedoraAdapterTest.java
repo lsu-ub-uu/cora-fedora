@@ -16,18 +16,23 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.internal;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 import java.io.InputStream;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.fedora.internal.HttpHandlerFactorySpy;
-import se.uu.ub.cora.fedora.internal.HttpHandlerSpy;
-import se.uu.ub.cora.fedora.internal.InputStreamSpy;
+import se.uu.ub.cora.fedora.FedoraAdapter;
+import se.uu.ub.cora.fedora.FedoraConflictException;
+import se.uu.ub.cora.fedora.FedoraException;
+import se.uu.ub.cora.fedora.spy.HttpHandlerFactorySpy;
+import se.uu.ub.cora.fedora.spy.HttpHandlerSpy;
+import se.uu.ub.cora.fedora.spy.InputStreamSpy;
 
 public class FedoraAdapterTest {
 
@@ -46,11 +51,18 @@ public class FedoraAdapterTest {
 
 	@Test
 	public void testCreateOk() {
-
+		httpHandlerFactory.statusResponses.add(404);
+		httpHandlerFactory.statusResponses.add(201);
 		fedora.create(recordId, recordXML);
 
-		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
-		HttpHandlerSpy factoredHttpHandler = httpHandlerFactory.factoredHttpHandler;
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		HttpHandlerSpy factoredHttpHandlerExistsCall = (HttpHandlerSpy) httpHandlerFactory.MCR
+				.getReturnValue("factor", 0);
+		factoredHttpHandlerExistsCall.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		factoredHttpHandlerExistsCall.MCR.assertMethodWasCalled("getResponseCode");
+
+		HttpHandlerSpy factoredHttpHandler = (HttpHandlerSpy) httpHandlerFactory.MCR
+				.getReturnValue("factor", 1);
 		assertEquals(factoredHttpHandler.requestMetod, "PUT");
 		factoredHttpHandler.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
 				"text/plain;charset=utf-8");
@@ -58,17 +70,63 @@ public class FedoraAdapterTest {
 		factoredHttpHandler.MCR.assertMethodWasCalled("getResponseCode");
 	}
 
+	@Test
+	public void testCreateDuplicateError() {
+		httpHandlerFactory.statusResponses.add(200);
+		httpHandlerFactory.statusResponses.add(201);
+		try {
+			fedora.create(recordId, recordXML);
+			assertFalse(true);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraConflictException);
+			assertEquals(e.getMessage(),
+					"Record with id: " + recordId + " already exists in Fedora.");
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		HttpHandlerSpy factoredHttpHandlerExistsCall = (HttpHandlerSpy) httpHandlerFactory.MCR
+				.getReturnValue("factor", 0);
+		factoredHttpHandlerExistsCall.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		factoredHttpHandlerExistsCall.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 1);
+
+	}
+
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing record in Fedora, recordId: someRecordId:001")
-	public void testCreateNotFound() {
-		httpHandlerFactory.statusResponse = 500;
+	public void testCreateAnyOtherError() {
+		httpHandlerFactory.statusResponses.add(404);
+		httpHandlerFactory.statusResponses.add(500);
 		fedora.create(recordId, recordXML);
+	}
 
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	public void testCreateAnyOtherError2() {
+		httpHandlerFactory.statusResponses.add(500);
+		fedora.create(recordId, recordXML);
+	}
+
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	public void testCreateAnyOtherErrorOnFactor() {
+		httpHandlerFactory.throwExceptionRuntimeException = true;
+		fedora.create(recordId, recordXML);
+	}
+
+	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
+			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	public void testCreateAnyOtherErrorAddXmlToHttpHandler() {
+		httpHandlerFactory.statusResponses.add(404);
+		httpHandlerFactory.statusResponses.add(201);
+		httpHandlerFactory.throwExceptionRuntimeException = true;
+		fedora.create(recordId, recordXML);
 	}
 
 	@Test
 	public void testUpdateOk() {
-		httpHandlerFactory.statusResponse = 204;
+		httpHandlerFactory.statusResponses.add(204);
 		fedora.update(recordId, recordXML);
 
 		assertEquals(httpHandlerFactory.url, baseUrl + recordId);
@@ -83,13 +141,13 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing record in Fedora, recordId: someRecordId:001")
 	public void testUpdateError() {
-		httpHandlerFactory.statusResponse = 500;
+		httpHandlerFactory.statusResponses.add(500);
 		fedora.update(recordId, recordXML);
 	}
 
 	@Test
 	public void testRead() {
-		httpHandlerFactory.statusResponse = 200;
+		httpHandlerFactory.statusResponses.add(200);
 
 		String recordFromFedora = fedora.read(recordId);
 
@@ -106,14 +164,14 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error reading record from Fedora, recordId: someRecordId:001")
 	public void testReadRecordNotFound() {
-		httpHandlerFactory.statusResponse = 404;
+		httpHandlerFactory.statusResponses.add(404);
 		fedora.read(recordId);
 	}
 
 	@Test
 	public void testCreateBinary() throws Exception {
 
-		httpHandlerFactory.statusResponse = 201;
+		httpHandlerFactory.statusResponses.add(201);
 		InputStream binary = new InputStreamSpy();
 		String binaryContentType = "image/jpg";
 
@@ -134,14 +192,14 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing binary in Fedora, recordId: someRecordId:001")
 	public void testCreateBinaryErrorWhileStoring() {
-		httpHandlerFactory.statusResponse = 500;
+		httpHandlerFactory.statusResponses.add(500);
 		InputStream binary = new InputStreamSpy();
 		fedora.createBinary(recordId, binary, "image/jpg");
 	}
 
 	@Test
 	public void testReadBinaryOk() throws Exception {
-		httpHandlerFactory.statusResponse = 200;
+		httpHandlerFactory.statusResponses.add(200);
 
 		InputStream binaryFromFedora = fedora.readBinary(recordId);
 
@@ -159,7 +217,7 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error reading binary from Fedora, recordId: someRecordId:001")
 	public void testReadBinaryNotFound() {
-		httpHandlerFactory.statusResponse = 404;
+		httpHandlerFactory.statusResponses.add(404);
 
 		fedora.readBinary(recordId);
 	}

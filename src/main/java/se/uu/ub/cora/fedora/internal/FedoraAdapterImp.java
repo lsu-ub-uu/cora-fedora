@@ -16,16 +16,22 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.internal;
 
 import java.io.InputStream;
 
+import se.uu.ub.cora.fedora.FedoraAdapter;
+import se.uu.ub.cora.fedora.FedoraConflictException;
+import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraAdapterImp implements FedoraAdapter {
 
+	private static final int NO_CONTENT = 204;
 	private static final int OK = 200;
+	private static final int CREATED = 201;
+	private static final int NOT_FOUND = 404;
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
 
@@ -36,15 +42,47 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void create(String recordId, String fedoraXML) {
-		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
-		int responseCode = callFedora(httpHandler);
-		throwErrorIfCreateNotOk(responseCode, recordId, "record");
+		checkRecordNotExists(recordId);
+		storeRecord(recordId, fedoraXML);
+	}
+
+	private void storeRecord(String recordId, String fedoraXML) {
+		try {
+			HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
+			int responseCode = callFedora(httpHandler);
+			throwErrorIfCreateNotOk(responseCode, recordId, "record");
+		} catch (Exception e) {
+			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
+		}
+	}
+
+	private void checkRecordNotExists(String recordId) {
+		int headResponseCode = callFedoraWithHead(recordId);
+		if (headResponseCode == OK) {
+			throw FedoraConflictException
+					.withMessage("Record with id: " + recordId + " already exists in Fedora.");
+		}
+		if (headResponseCode != NOT_FOUND) {
+			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
+		}
+	}
+
+	private String storingRecordErrorMessage(String type, String recordId) {
+		return "Error storing " + type + " in Fedora, recordId: " + recordId;
+	}
+
+	private int callFedoraWithHead(String recordId) {
+		try {
+			HttpHandler httpHandlerHead = factorHttpHandler(recordId, "HEAD");
+			return callFedora(httpHandlerHead);
+		} catch (Exception e) {
+			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
+		}
 	}
 
 	private void throwErrorIfCreateNotOk(int responseCode, String recordId, String type) {
-		if (responseCode != 201) {
-			throw FedoraException
-					.withMessage("Error storing " + type + " in Fedora, recordId: " + recordId);
+		if (responseCode != CREATED) {
+			throw FedoraException.withMessage(storingRecordErrorMessage(type, recordId));
 		}
 	}
 
@@ -94,9 +132,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private void throwErrorIfUpdateNotOk(int responseCode, String recordId) {
-		if (responseCode != 204) {
-			throw FedoraException
-					.withMessage("Error storing record in Fedora, recordId: " + recordId);
+		if (responseCode != NO_CONTENT) {
+			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
 		}
 	}
 
@@ -129,13 +166,12 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		throwErrorIfReadNotOk(responseCode, recordId, "binary");
 	}
 
-	public String getBaseUrl() {
+	public String onlyForTestGetBaseUrl() {
 		return baseUrl;
-		// TODO Auto-generated method stub
 
 	}
 
-	public HttpHandlerFactory getHttpHandlerFactory() {
+	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
 		return httpHandlerFactory;
 	}
 

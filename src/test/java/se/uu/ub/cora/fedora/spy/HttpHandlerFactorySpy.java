@@ -16,7 +16,10 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora.spy;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
@@ -28,7 +31,7 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 	public String url;
 	public HttpHandlerSpy factoredHttpHandler;
 
-	public int statusResponse = 201;
+	public List<Integer> statusResponses = new ArrayList<>();
 	public boolean throwExceptionRuntimeException = false;
 
 	public MethodCallRecorder MCR = new MethodCallRecorder();
@@ -38,7 +41,8 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 		MCR.addCall("url", url);
 		this.url = url;
 		factoredHttpHandler = new HttpHandlerSpy();
-		factoredHttpHandler.statusResponse = statusResponse;
+		factoredHttpHandler.statusResponse = statusResponses
+				.get(MCR.getNumberOfCallsToMethod("factor") - 1);
 		factoredHttpHandler.throwExceptionRuntimeException = throwExceptionRuntimeException;
 		MCR.addReturned(factoredHttpHandler);
 		return factoredHttpHandler;
