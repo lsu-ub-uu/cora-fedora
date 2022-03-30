@@ -18,4 +18,8 @@ public class FedoraFactoryImp implements FedoraFactory {
 		return new FedoraAdapterImp(httpHandlerFactory, fedoraUrl);
 	}
 
+	public String onlyForTestGetBaseUrl() {
+		return fedoraUrl;
+	}
+
 }

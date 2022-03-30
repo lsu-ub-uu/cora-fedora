@@ -16,23 +16,22 @@ public class FedoraFactoryTest {
 	HttpHandlerFactory httpHandlerFactory;
 	private String someFedoraUrl;
 	private FedoraFactory factory;
+	private FedoraAdapterImp fedoraAdapter;
 
 	@BeforeMethod
 	public void beforeMethod() {
 		someFedoraUrl = "http://someFedoraUrl/";
 		factory = new FedoraFactoryImp(someFedoraUrl);
+		fedoraAdapter = (FedoraAdapterImp) factory.factorFedoraAdapter();
 	}
 
 	@Test
 	public void testInit() throws Exception {
-		FedoraAdapterImp fedoraAdapter = (FedoraAdapterImp) factory.factorFedoraAdapter();
-
 		assertNotNull(fedoraAdapter);
 	}
 
 	@Test
 	public void testHttpHandlerFactoryCreatedAndSentToInstances() throws Exception {
-		FedoraAdapterImp fedoraAdapter = (FedoraAdapterImp) factory.factorFedoraAdapter();
 		HttpHandlerFactoryImp factoredHttpHandlerFactory = (HttpHandlerFactoryImp) fedoraAdapter
 				.onlyForTestGetHttpHandlerFactory();
 		assertNotNull(factoredHttpHandlerFactory);
@@ -44,7 +43,11 @@ public class FedoraFactoryTest {
 
 	@Test
 	public void testFedoraUrlSentToInstances() throws Exception {
-		FedoraAdapterImp fedoraAdapter = (FedoraAdapterImp) factory.factorFedoraAdapter();
 		assertEquals(fedoraAdapter.onlyForTestGetBaseUrl(), someFedoraUrl);
+	}
+
+	@Test
+	public void testGetFedoraUrl() throws Exception {
+		assertEquals(((FedoraFactoryImp) factory).onlyForTestGetBaseUrl(), someFedoraUrl);
 	}
 }

@@ -19,6 +19,7 @@
 package se.uu.ub.cora.fedora.internal;
 
 import java.io.InputStream;
+import java.text.MessageFormat;
 
 import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
@@ -34,6 +35,9 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final int NOT_FOUND = 404;
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
+	private String recordErrorMessage = "Error storing record in Fedora, recordId: {0}";
+	private String recordConflictMessage = "Record with id: {0} already exists in Fedora.";
+	private String binaryErrorMessage = "Error storing binary in Fedora, recordId: {0}";
 
 	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
@@ -46,29 +50,19 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		storeRecord(recordId, fedoraXML);
 	}
 
-	private void storeRecord(String recordId, String fedoraXML) {
-		try {
-			HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
-			int responseCode = callFedora(httpHandler);
-			throwErrorIfCreateNotOk(responseCode, recordId, "record");
-		} catch (Exception e) {
-			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
-		}
-	}
-
 	private void checkRecordNotExists(String recordId) {
 		int headResponseCode = callFedoraWithHead(recordId);
 		if (headResponseCode == OK) {
 			throw FedoraConflictException
-					.withMessage("Record with id: " + recordId + " already exists in Fedora.");
+					.withMessage(MessageFormat.format(recordConflictMessage, recordId));
 		}
 		if (headResponseCode != NOT_FOUND) {
-			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
+			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
 		}
 	}
 
-	private String storingRecordErrorMessage(String type, String recordId) {
-		return "Error storing " + type + " in Fedora, recordId: " + recordId;
+	private String createRecordStoreErrorMessage(String recordId) {
+		return MessageFormat.format(recordErrorMessage, recordId);
 	}
 
 	private int callFedoraWithHead(String recordId) {
@@ -76,13 +70,23 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			HttpHandler httpHandlerHead = factorHttpHandler(recordId, "HEAD");
 			return callFedora(httpHandlerHead);
 		} catch (Exception e) {
-			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
+			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
 		}
 	}
 
-	private void throwErrorIfCreateNotOk(int responseCode, String recordId, String type) {
+	private void storeRecord(String recordId, String fedoraXML) {
+		try {
+			HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
+			int responseCode = callFedora(httpHandler);
+			throwErrorIfCreateNotOk(responseCode, recordId);
+		} catch (Exception e) {
+			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
+		}
+	}
+
+	private void throwErrorIfCreateNotOk(int responseCode, String recordId) {
 		if (responseCode != CREATED) {
-			throw FedoraException.withMessage(storingRecordErrorMessage(type, recordId));
+			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
 		}
 	}
 
@@ -133,7 +137,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private void throwErrorIfUpdateNotOk(int responseCode, String recordId) {
 		if (responseCode != NO_CONTENT) {
-			throw FedoraException.withMessage(storingRecordErrorMessage("record", recordId));
+			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
 		}
 	}
 
@@ -144,12 +148,14 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		httpHandler.setStreamOutput(binary);
 
 		int responseCode = callFedora(httpHandler);
-		throwErrorIfCreateBinaryNotOk(recordId, responseCode);
+		if (responseCode != CREATED) {
+			throw FedoraException.withMessage(createBinaryStoreErrorMessage(recordId));
+		}
 
 	}
 
-	private void throwErrorIfCreateBinaryNotOk(String recordId, int responseCode) {
-		throwErrorIfCreateNotOk(responseCode, recordId, "binary");
+	private String createBinaryStoreErrorMessage(String recordId) {
+		return MessageFormat.format(binaryErrorMessage, recordId);
 	}
 
 	@Override
