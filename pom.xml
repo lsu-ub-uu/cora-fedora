@@ -31,9 +31,9 @@
     <name>Fedora 6+</name>
 
     <properties>
-		<httphandler.version>2.5-SNAPSHOT</httphandler.version>
-        <coradata.version>5.4.0</coradata.version>
-        <json.version>3.1.0</json.version>
+		<httphandler.version>2.5.0</httphandler.version>
+        <coradata.version>6.1.0</coradata.version>
+        <json.version>3.2.0</json.version>
         <testutils.version>1.2.0</testutils.version>
     </properties>
 
