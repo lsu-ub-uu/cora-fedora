@@ -93,12 +93,19 @@ public class FedoraAdapterTest {
 
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	@Test
 	public void testCreateAnyOtherError() {
 		httpHandlerFactory.statusResponses.add(404);
 		httpHandlerFactory.statusResponses.add(500);
-		fedora.create(recordId, recordXML);
+		try {
+			fedora.create(recordId, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(),
+					"Error storing record in Fedora, recordId: someRecordId:001");
+			assertTrue(e.getCause() instanceof FedoraException);
+		}
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
@@ -108,11 +115,18 @@ public class FedoraAdapterTest {
 		fedora.create(recordId, recordXML);
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error storing record in Fedora, recordId: someRecordId:001")
+	@Test
 	public void testCreateAnyOtherErrorOnFactor() {
 		httpHandlerFactory.throwExceptionRuntimeException = true;
-		fedora.create(recordId, recordXML);
+		try {
+			fedora.create(recordId, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(),
+					"Error storing record in Fedora, recordId: someRecordId:001");
+			assertTrue(e.getCause() instanceof IndexOutOfBoundsException);
+		}
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""

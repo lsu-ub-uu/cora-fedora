@@ -70,7 +70,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			HttpHandler httpHandlerHead = factorHttpHandler(recordId, "HEAD");
 			return callFedora(httpHandlerHead);
 		} catch (Exception e) {
-			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
+			throw FedoraException.withMessageAndException(createRecordStoreErrorMessage(recordId),
+					e);
 		}
 	}
 
@@ -80,7 +81,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			int responseCode = callFedora(httpHandler);
 			throwErrorIfCreateNotOk(responseCode, recordId);
 		} catch (Exception e) {
-			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
+			throw FedoraException.withMessageAndException(createRecordStoreErrorMessage(recordId),
+					e);
 		}
 	}
 
@@ -161,7 +163,6 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public InputStream readBinary(String recordId) {
 		HttpHandler httpHandler = factorHttpHandler(recordId, "GET");
-		// httpHandler.setRequestProperty("Accept", "text/plain;charset=utf-8");
 		int responseCode = httpHandler.getResponseCode();
 		throwErrorIfReadBinaryNotOk(responseCode, recordId);
 		return httpHandler.getResponseBinary();
