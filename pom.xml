@@ -33,8 +33,8 @@
     <properties>
 		<httphandler.version>2.6.0</httphandler.version>
         <json.version>3.3.0</json.version>
-		<testutils.version>1.4-SNAPSHOT</testutils.version>
-		<testspies.version>1.0-SNAPSHOT</testspies.version>
+		<testutils.version>1.4.0</testutils.version>
+		<testspies.version>1.0.0</testspies.version>
     </properties>
 
     <scm>
