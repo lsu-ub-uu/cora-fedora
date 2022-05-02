@@ -23,7 +23,7 @@ import java.io.InputStream;
 /**
  * FedoraAdapter defines an interface in order to talk to Fedora 6+ hiding the implementation
  * details.
- * 
+ * <p>
  * Implementation are generally not expected to be thread safe.
  */
 
@@ -31,10 +31,10 @@ public interface FedoraAdapter {
 
 	/**
 	 * Creates a record in fedora using recordId as id and recordXml as payload
-	 * 
+	 * <p>
 	 * If a record with the same recordId is already stored in fedora a
 	 * {@link FedoraConflictException} will be thrown.
-	 * 
+	 * <p>
 	 * For any other problem a {@link FedoraException} will be thrown.
 	 * 
 	 * @param recordId
@@ -57,7 +57,7 @@ public interface FedoraAdapter {
 
 	/**
 	 * Reads a record from fedora using recordId
-	 * 
+	 * <p>
 	 * If there are problems while reading the record in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 * 
@@ -79,7 +79,10 @@ public interface FedoraAdapter {
 	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of
 	 * the record in Fedora.
-	 * 
+	 * <p>
+	 * If a record with the same recordId is not already stored in fedora a
+	 * {@link FedoraMissingException} will be thrown.
+	 * <p>
 	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 *

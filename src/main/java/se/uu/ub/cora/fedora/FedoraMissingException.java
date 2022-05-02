@@ -16,17 +16,26 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.spy;
+package se.uu.ub.cora.fedora;
 
-import java.io.IOException;
-import java.io.InputStream;
+public class FedoraMissingException extends RuntimeException {
 
-public class InputStreamSpy extends InputStream {
+	private static final long serialVersionUID = -255261285196817577L;
 
-	@Override
-	public int read() throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+	private FedoraMissingException(String message) {
+		super(message);
+	}
+
+	private FedoraMissingException(String message, Exception e) {
+		super(message, e);
+	}
+
+	public static FedoraMissingException withMessage(String message) {
+		return new FedoraMissingException(message);
+	}
+
+	public static FedoraMissingException withMessageAndException(String message, Exception e) {
+		return new FedoraMissingException(message, e);
 	}
 
 }

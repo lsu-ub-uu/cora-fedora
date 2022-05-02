@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
+import se.uu.ub.cora.fedora.FedoraMissingException;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
@@ -33,11 +34,12 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final int OK = 200;
 	private static final int CREATED = 201;
 	private static final int NOT_FOUND = 404;
+	private static final String RECORD_ERROR_MESSAGE = "Error storing record in Fedora, recordId: {0}";
+	private static final String RECORD_MISSING_MESSAGE = "{0} with id: {1} does not exist in Fedora.";
+	private static final String RECORD_CONFLICT_MESSAGE = "Record with id: {0} already exists in Fedora.";
+	private static final String BINARY_ERROR_MESSAGE = "Error storing binary in Fedora, recordId: {0}";
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
-	private String recordErrorMessage = "Error storing record in Fedora, recordId: {0}";
-	private String recordConflictMessage = "Record with id: {0} already exists in Fedora.";
-	private String binaryErrorMessage = "Error storing binary in Fedora, recordId: {0}";
 
 	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
@@ -54,7 +56,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		int headResponseCode = callFedoraWithHead(recordId);
 		if (headResponseCode == OK) {
 			throw FedoraConflictException
-					.withMessage(MessageFormat.format(recordConflictMessage, recordId));
+					.withMessage(MessageFormat.format(RECORD_CONFLICT_MESSAGE, recordId));
 		}
 		if (headResponseCode != NOT_FOUND) {
 			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
@@ -62,7 +64,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private String createRecordStoreErrorMessage(String recordId) {
-		return MessageFormat.format(recordErrorMessage, recordId);
+		return MessageFormat.format(RECORD_ERROR_MESSAGE, recordId);
 	}
 
 	private int callFedoraWithHead(String recordId) {
@@ -108,10 +110,18 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private void throwErrorIfReadNotOk(int responseCode, String recordId, String type) {
+		if (responseCode == NOT_FOUND) {
+			throw FedoraMissingException.withMessage(
+					MessageFormat.format(RECORD_MISSING_MESSAGE, capitalize(type), recordId));
+		}
 		if (responseCode != OK) {
 			throw FedoraException
 					.withMessage("Error reading " + type + " from Fedora, recordId: " + recordId);
 		}
+	}
+
+	private String capitalize(String string) {
+		return string.substring(0, 1).toUpperCase() + string.substring(1);
 	}
 
 	private HttpHandler setUpHttpHandlerForRead(String recordId) {
@@ -153,11 +163,10 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		if (responseCode != CREATED) {
 			throw FedoraException.withMessage(createBinaryStoreErrorMessage(recordId));
 		}
-
 	}
 
 	private String createBinaryStoreErrorMessage(String recordId) {
-		return MessageFormat.format(binaryErrorMessage, recordId);
+		return MessageFormat.format(BINARY_ERROR_MESSAGE, recordId);
 	}
 
 	@Override
@@ -166,7 +175,6 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		int responseCode = httpHandler.getResponseCode();
 		throwErrorIfReadBinaryNotOk(responseCode, recordId);
 		return httpHandler.getResponseBinary();
-
 	}
 
 	private void throwErrorIfReadBinaryNotOk(int responseCode, String recordId) {
@@ -175,11 +183,9 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	public String onlyForTestGetBaseUrl() {
 		return baseUrl;
-
 	}
 
 	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
 		return httpHandlerFactory;
 	}
-
 }
