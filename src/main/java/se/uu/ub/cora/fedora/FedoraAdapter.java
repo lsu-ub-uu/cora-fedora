@@ -81,7 +81,7 @@ public interface FedoraAdapter {
 	 * the record in Fedora.
 	 * <p>
 	 * If a record with the same recordId is not already stored in fedora a
-	 * {@link FedoraMissingException} will be thrown.
+	 * {@link FedoraNotFoundException} will be thrown.
 	 * <p>
 	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
 	 * thrown.

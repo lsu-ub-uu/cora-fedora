@@ -18,24 +18,24 @@
  */
 package se.uu.ub.cora.fedora;
 
-public class FedoraMissingException extends RuntimeException {
+public class FedoraNotFoundException extends RuntimeException {
 
 	private static final long serialVersionUID = -255261285196817577L;
 
-	private FedoraMissingException(String message) {
+	private FedoraNotFoundException(String message) {
 		super(message);
 	}
 
-	private FedoraMissingException(String message, Exception e) {
+	private FedoraNotFoundException(String message, Exception e) {
 		super(message, e);
 	}
 
-	public static FedoraMissingException withMessage(String message) {
-		return new FedoraMissingException(message);
+	public static FedoraNotFoundException withMessage(String message) {
+		return new FedoraNotFoundException(message);
 	}
 
-	public static FedoraMissingException withMessageAndException(String message, Exception e) {
-		return new FedoraMissingException(message, e);
+	public static FedoraNotFoundException withMessageAndException(String message, Exception e) {
+		return new FedoraNotFoundException(message, e);
 	}
 
 }

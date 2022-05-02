@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
-import se.uu.ub.cora.fedora.FedoraMissingException;
+import se.uu.ub.cora.fedora.FedoraNotFoundException;
 import se.uu.ub.cora.testspies.httphandler.HttpHandlerFactorySpy;
 import se.uu.ub.cora.testspies.httphandler.HttpHandlerSpy;
 import se.uu.ub.cora.testspies.httphandler.InputStreamSpy;
@@ -182,7 +182,7 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertReturn("getResponseText", 0, recordFromFedora);
 	}
 
-	@Test(expectedExceptions = FedoraMissingException.class, expectedExceptionsMessageRegExp = ""
+	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
 			+ "Record with id: someRecordId:001 does not exist in Fedora.")
 	public void testReadRecordNotFound() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));
@@ -236,7 +236,7 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertReturn("getResponseBinary", 0, binaryFromFedora);
 	}
 
-	@Test(expectedExceptions = FedoraMissingException.class, expectedExceptionsMessageRegExp = ""
+	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
 			+ "Binary with id: someRecordId:001 does not exist in Fedora.")
 	public void testReadBinaryNotFound() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));

@@ -23,11 +23,11 @@ import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 
-public class FedoraMissingExceptionTest {
+public class FedoraNotFoundExceptionTest {
 	@Test
 	public void testInit() {
 		String message = "message";
-		FedoraMissingException exception = FedoraMissingException.withMessage(message);
+		FedoraNotFoundException exception = FedoraNotFoundException.withMessage(message);
 		assertEquals(exception.getMessage(), "message");
 		assertTrue(exception instanceof RuntimeException);
 	}
@@ -36,7 +36,7 @@ public class FedoraMissingExceptionTest {
 	public void testMessageAndError() throws Exception {
 		String message = "message";
 		Exception exception = new RuntimeException();
-		FedoraMissingException storageException = FedoraMissingException
+		FedoraNotFoundException storageException = FedoraNotFoundException
 				.withMessageAndException(message, exception);
 		assertEquals(storageException.getMessage(), "message");
 		assertEquals(storageException.getCause(), exception);
