@@ -69,7 +69,11 @@ public interface FedoraAdapter {
 
 	/**
 	 * Reads binary from fedora using recorid as identifier.
-	 * 
+	 * <p>
+	 * If a record with the specified recordId is not found in fedora a
+	 * {@link FedoraNotFoundException} will be thrown.
+	 * <p>
+	 *
 	 * @param recordId
 	 *            It is the identifier of the binary to be read.
 	 * @return InputStrem representation of the binary read from Fedora

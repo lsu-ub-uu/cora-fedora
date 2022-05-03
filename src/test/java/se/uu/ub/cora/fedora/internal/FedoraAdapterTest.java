@@ -38,6 +38,11 @@ import se.uu.ub.cora.testspies.httphandler.InputStreamSpy;
 
 public class FedoraAdapterTest {
 
+	private static final int CREATED = 201;
+	private static final int OK = 200;
+	private static final int INTERNAL_SERVER_ERROR = 500;
+	private static final int NO_CONTENT = 204;
+	private static final int NOT_FOUND = 404;
 	private HttpHandlerFactorySpy httpHandlerFactory;
 	private FedoraAdapter fedora;
 	private String baseUrl;
@@ -61,8 +66,8 @@ public class FedoraAdapterTest {
 
 	@Test
 	public void testCreateOk() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));
-		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(201));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(CREATED));
 
 		fedora.create(recordId, recordXML);
 
@@ -80,8 +85,8 @@ public class FedoraAdapterTest {
 
 	@Test
 	public void testCreateDuplicateError() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(200));
-		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(201));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(CREATED));
 
 		try {
 			fedora.create(recordId, recordXML);
@@ -101,8 +106,8 @@ public class FedoraAdapterTest {
 
 	@Test
 	public void testCreateAnyOtherError() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));
-		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(500));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 
 		try {
 			fedora.create(recordId, recordXML);
@@ -118,7 +123,7 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing record in Fedora, recordId: someRecordId:001")
 	public void testCreateAnyOtherError2() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(500));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 		fedora.create(recordId, recordXML);
 	}
 
@@ -140,7 +145,7 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing record in Fedora, recordId: someRecordId:001")
 	public void testCreateAnyOtherErrorAddXmlToHttpHandler() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
 
 		httpHandlerSpy1.MRV.setAlwaysThrowException("setOutput",
 				new RuntimeException("errorFromSpy"));
@@ -149,27 +154,73 @@ public class FedoraAdapterTest {
 
 	@Test
 	public void testUpdateOk() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(204));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(NO_CONTENT));
+
 		fedora.update(recordId, recordXML);
 
 		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
-		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "PUT");
-		httpHandlerSpy0.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
-				"text/plain;charset=utf-8");
-		httpHandlerSpy0.MCR.assertParameters("setOutput", 0, recordXML);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertParameters("factor", 1, baseUrl + recordId);
+		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "PUT");
+		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
+				"text/plain;charset=utf-8");
+		httpHandlerSpy1.MCR.assertParameters("setOutput", 0, recordXML);
+		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
+	}
+
+	@Test
+	public void testUpdateNoRecordExistsWithId() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
+
+		try {
+			fedora.update(recordId, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraNotFoundException);
+			assertEquals(e.getMessage(),
+					"Record with id: someRecordId:001 does not exist in Fedora.");
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 1);
+	}
+
+	@Test
+	public void testUpdateErrorCheckingIfRecordExists() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
+
+		try {
+			fedora.update(recordId, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(),
+					"Error storing record in Fedora, recordId: someRecordId:001");
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 1);
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing record in Fedora, recordId: someRecordId:001")
 	public void testUpdateError() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(500));
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 		fedora.update(recordId, recordXML);
 	}
 
 	@Test
 	public void testRead() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(200));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
 
 		String recordFromFedora = fedora.read(recordId);
 
@@ -185,20 +236,20 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
 			+ "Record with id: someRecordId:001 does not exist in Fedora.")
 	public void testReadRecordNotFound() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
 		fedora.read(recordId);
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error reading record from Fedora, recordId: someRecordId:001")
 	public void testReadErrorReading() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(500));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 		fedora.read(recordId);
 	}
 
 	@Test
 	public void testCreateBinary() throws Exception {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(201));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(CREATED));
 
 		InputStream binary = new InputStreamSpy();
 		String binaryContentType = "image/jpg";
@@ -217,14 +268,14 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error storing binary in Fedora, recordId: someRecordId:001")
 	public void testCreateBinaryErrorWhileStoring() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(500));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 		InputStream binary = new InputStreamSpy();
 		fedora.createBinary(recordId, binary, "image/jpg");
 	}
 
 	@Test
 	public void testReadBinaryOk() throws Exception {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(200));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
 
 		InputStream binaryFromFedora = fedora.readBinary(recordId);
 
@@ -239,7 +290,7 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
 			+ "Binary with id: someRecordId:001 does not exist in Fedora.")
 	public void testReadBinaryNotFound() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(404));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
 
 		fedora.readBinary(recordId);
 	}
@@ -247,7 +298,7 @@ public class FedoraAdapterTest {
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
 			+ "Error reading binary from Fedora, recordId: someRecordId:001")
 	public void testReadBinaryOtherError() {
-		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(500));
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 
 		fedora.readBinary(recordId);
 	}

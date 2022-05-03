@@ -30,6 +30,7 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraAdapterImp implements FedoraAdapter {
 
+	private static final String RECORD = "record";
 	private static final int NO_CONTENT = 204;
 	private static final int OK = 200;
 	private static final int CREATED = 201;
@@ -53,7 +54,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private void checkRecordNotExists(String recordId) {
-		int headResponseCode = callFedoraWithHead(recordId);
+		int headResponseCode = readHeadForRecord(recordId);
 		if (headResponseCode == OK) {
 			throw FedoraConflictException
 					.withMessage(MessageFormat.format(RECORD_CONFLICT_MESSAGE, recordId));
@@ -67,7 +68,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		return MessageFormat.format(RECORD_ERROR_MESSAGE, recordId);
 	}
 
-	private int callFedoraWithHead(String recordId) {
+	private int readHeadForRecord(String recordId) {
 		try {
 			HttpHandler httpHandlerHead = factorHttpHandler(recordId, "HEAD");
 			return callFedora(httpHandlerHead);
@@ -105,7 +106,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	public String read(String recordId) {
 		HttpHandler httpHandler = setUpHttpHandlerForRead(recordId);
 		int responseCode = callFedora(httpHandler);
-		throwErrorIfReadNotOk(responseCode, recordId, "record");
+		throwErrorIfReadNotOk(responseCode, recordId, RECORD);
 		return httpHandler.getResponseText();
 	}
 
@@ -138,16 +139,32 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void update(String recordId, String fedoraXML) {
+		throwErrorIfRecordDoesNotExist(recordId);
+		int responseCode = updateRecord(recordId, fedoraXML);
+		throwErrorIfUpdateFailed(responseCode, recordId);
+	}
+
+	private void throwErrorIfRecordDoesNotExist(String recordId) {
+		int headResponseCode = readHeadForRecord(recordId);
+		if (headResponseCode == NOT_FOUND) {
+			throw FedoraNotFoundException.withMessage(
+					MessageFormat.format(RECORD_NOT_FOUND_MESSAGE, "Record", recordId));
+		}
+		if (headResponseCode != OK) {
+			throw FedoraException.withMessage(MessageFormat.format(RECORD_ERROR_MESSAGE, recordId));
+		}
+	}
+
+	private int updateRecord(String recordId, String fedoraXML) {
 		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
-		int responseCode = callFedora(httpHandler);
-		throwErrorIfUpdateNotOk(responseCode, recordId);
+		return callFedora(httpHandler);
 	}
 
 	private int callFedora(HttpHandler httpHandler) {
 		return httpHandler.getResponseCode();
 	}
 
-	private void throwErrorIfUpdateNotOk(int responseCode, String recordId) {
+	private void throwErrorIfUpdateFailed(int responseCode, String recordId) {
 		if (responseCode != NO_CONTENT) {
 			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
 		}

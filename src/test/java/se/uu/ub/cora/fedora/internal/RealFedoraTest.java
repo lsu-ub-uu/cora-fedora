@@ -43,25 +43,25 @@ public class RealFedoraTest {
 
 	@BeforeMethod
 	public void setUp() {
-		baseUrl = "http://alvin-docker-fedora:808/fcrepo/rest/plats/";
+		baseUrl = "http://alvin-docker-fedora:8080/fcrepo/rest/plats/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
 	}
 
-	@Test(enabled = false)
+	@Test(enabled = true)
 	public void testCreateOk() {
 		String fedoraXML = "<trying>hello</trying>";
-		String recordId = "someRecordId:012";
+		String recordId = "someRecordId:112";
 
 		fedora.create(recordId, fedoraXML);
 
 	}
 
-	@Test(enabled = false)
+	@Test(enabled = true)
 	public void testUpdateOk() {
-		String fedoraXML = "<trying>hello</trying>";
-		String recordId = "someRecordId:015n";
+		String fedoraXML = "<trying>helloUpdated</trying>";
+		String recordId = "someRecordId:114";
 
 		fedora.update(recordId, fedoraXML);
 
