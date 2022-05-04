@@ -49,7 +49,7 @@ public class RealFedoraTest {
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
 	}
 
-	@Test(enabled = true)
+	@Test(enabled = false)
 	public void testCreateOk() {
 		String fedoraXML = "<trying>hello</trying>";
 		String recordId = "someRecordId:112";
@@ -58,7 +58,7 @@ public class RealFedoraTest {
 
 	}
 
-	@Test(enabled = true)
+	@Test(enabled = false)
 	public void testUpdateOk() {
 		String fedoraXML = "<trying>helloUpdated</trying>";
 		String recordId = "someRecordId:114";
