@@ -43,7 +43,7 @@ public interface FedoraAdapter {
 	 *            payload to store
 	 * @return Response text from fedora
 	 */
-	void create(String recordId, String recordXml);
+	void createRecord(String recordId, String recordXml);
 
 	/**
 	 * Stores a new binary in Fedora
@@ -65,7 +65,7 @@ public interface FedoraAdapter {
 	 *            identifies the record to read
 	 * @return record fecthed from fedora
 	 */
-	String read(String recordId);
+	String readRecord(String recordId);
 
 	/**
 	 * Reads binary from fedora using recorid as identifier.
@@ -96,6 +96,6 @@ public interface FedoraAdapter {
 	 *            payload to store
 	 * @return Response text from fedora
 	 */
-	void update(String recordId, String recordXml);
+	void updateRecord(String recordId, String recordXml);
 
 }

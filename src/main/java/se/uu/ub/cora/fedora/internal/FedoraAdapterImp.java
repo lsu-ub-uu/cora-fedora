@@ -48,7 +48,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public void create(String recordId, String fedoraXML) {
+	public void createRecord(String recordId, String fedoraXML) {
 		checkRecordNotExists(recordId);
 		storeRecord(recordId, fedoraXML);
 	}
@@ -103,7 +103,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public String read(String recordId) {
+	public String readRecord(String recordId) {
 		HttpHandler httpHandler = setUpHttpHandlerForRead(recordId);
 		int responseCode = callFedora(httpHandler);
 		throwErrorIfReadNotOk(responseCode, recordId, RECORD);
@@ -138,9 +138,9 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public void update(String recordId, String fedoraXML) {
+	public void updateRecord(String recordId, String fedoraXML) {
 		throwErrorIfRecordDoesNotExist(recordId);
-		int responseCode = updateRecord(recordId, fedoraXML);
+		int responseCode = updateRecordInFedora(recordId, fedoraXML);
 		throwErrorIfUpdateFailed(responseCode, recordId);
 	}
 
@@ -155,7 +155,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		}
 	}
 
-	private int updateRecord(String recordId, String fedoraXML) {
+	private int updateRecordInFedora(String recordId, String fedoraXML) {
 		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
 		return callFedora(httpHandler);
 	}

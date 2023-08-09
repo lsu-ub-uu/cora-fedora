@@ -54,7 +54,7 @@ public class RealFedoraTest {
 		String fedoraXML = "<trying>hello</trying>";
 		String recordId = "someRecordId:112";
 
-		fedora.create(recordId, fedoraXML);
+		fedora.createRecord(recordId, fedoraXML);
 
 	}
 
@@ -63,7 +63,7 @@ public class RealFedoraTest {
 		String fedoraXML = "<trying>helloUpdated</trying>";
 		String recordId = "someRecordId:114";
 
-		fedora.update(recordId, fedoraXML);
+		fedora.updateRecord(recordId, fedoraXML);
 
 	}
 
@@ -71,7 +71,7 @@ public class RealFedoraTest {
 	public void testReadOk() {
 		String recordId = "someRecordId:010";
 
-		String read = fedora.read(recordId);
+		String read = fedora.readRecord(recordId);
 		assertEquals(read, "");
 
 	}
