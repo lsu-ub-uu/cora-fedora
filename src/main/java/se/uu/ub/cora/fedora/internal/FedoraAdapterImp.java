@@ -30,16 +30,22 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraAdapterImp implements FedoraAdapter {
 
-	private static final String TOMBSTONE = "/fcr:tombstone";
-	private static final String RECORD = "record";
-	private static final int NO_CONTENT = 204;
 	private static final int OK = 200;
 	private static final int CREATED = 201;
+	private static final int NO_CONTENT = 204;
 	private static final int NOT_FOUND = 404;
+
+	private static final String TEXT_PLAIN_UTF_8 = "text/plain;charset=utf-8";
+	private static final String CONTENT_TYPE = "Content-Type";
+	private static final String TOMBSTONE = "/fcr:tombstone";
+	private static final String RECORD = "record";
+
 	private static final String RECORD_ERROR_MESSAGE = "Error storing record in Fedora, recordId: {0}";
 	private static final String RECORD_NOT_FOUND_MESSAGE = "{0} with id: {1} does not exist in Fedora.";
 	private static final String RECORD_CONFLICT_MESSAGE = "Record with id: {0} already exists in Fedora.";
 	private static final String BINARY_ERROR_MESSAGE = "Error storing binary in Fedora, recordId: {0}";
+	private static final String BINARY_UPDATE_ERROR_MESSAGE = "Error updating binary in Fedora, recordId: {0}";
+	private static final String BINARY_NOT_FOUND_MESSAGE = "Binary with id: {0} does not exist in Fedora.";
 	private static final String DELETE_NOT_FOUND_MESSAGE = "Unable to delete record or binary from fedora. Resource not found with recordId: {0}";
 	private static final String DELETE_ERROR_MESSAGE = "Error deleting record or binary in Fedora, recordId: {0}";
 
@@ -68,10 +74,6 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		}
 	}
 
-	private String createRecordStoreErrorMessage(String recordId) {
-		return MessageFormat.format(RECORD_ERROR_MESSAGE, recordId);
-	}
-
 	private int readHeadForRecord(String recordId) {
 		try {
 			HttpHandler httpHandlerHead = factorHttpHandler(recordId, "HEAD");
@@ -80,6 +82,20 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			throw FedoraException.withMessageAndException(createRecordStoreErrorMessage(recordId),
 					e);
 		}
+	}
+
+	private HttpHandler factorHttpHandler(String recordId, String requestMethod) {
+		HttpHandler httpHandler = httpHandlerFactory.factor(baseUrl + recordId);
+		httpHandler.setRequestMethod(requestMethod);
+		return httpHandler;
+	}
+
+	private int callFedora(HttpHandler httpHandler) {
+		return httpHandler.getResponseCode();
+	}
+
+	private String createRecordStoreErrorMessage(String recordId) {
+		return MessageFormat.format(RECORD_ERROR_MESSAGE, recordId);
 	}
 
 	private void storeRecord(String recordId, String fedoraXML) {
@@ -101,9 +117,30 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private HttpHandler setupHttpHandlerForStore(String recordId, String fedoraXML) {
 		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
-		httpHandler.setRequestProperty("Content-Type", "text/plain;charset=utf-8");
+		httpHandler.setRequestProperty(CONTENT_TYPE, TEXT_PLAIN_UTF_8);
 		httpHandler.setOutput(fedoraXML);
 		return httpHandler;
+	}
+
+	@Override
+	public void createBinary(String recordId, InputStream binary, String contentType) {
+		HttpHandler httpHandler = httpPutBinary(recordId, binary, contentType);
+
+		int responseCode = callFedora(httpHandler);
+		if (responseCode != CREATED) {
+			throw FedoraException.withMessage(createBinaryStoreErrorMessage(recordId));
+		}
+	}
+
+	private HttpHandler httpPutBinary(String recordId, InputStream binary, String contentType) {
+		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
+		httpHandler.setRequestProperty(CONTENT_TYPE, contentType);
+		httpHandler.setStreamOutput(binary);
+		return httpHandler;
+	}
+
+	private String createBinaryStoreErrorMessage(String recordId) {
+		return MessageFormat.format(BINARY_ERROR_MESSAGE, recordId);
 	}
 
 	@Override
@@ -131,63 +168,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private HttpHandler setUpHttpHandlerForRead(String recordId) {
 		HttpHandler httpHandler = factorHttpHandler(recordId, "GET");
-		httpHandler.setRequestProperty("Accept", "text/plain;charset=utf-8");
+		httpHandler.setRequestProperty("Accept", TEXT_PLAIN_UTF_8);
 		return httpHandler;
-	}
-
-	private HttpHandler factorHttpHandler(String recordId, String requestMethod) {
-		HttpHandler httpHandler = httpHandlerFactory.factor(baseUrl + recordId);
-		httpHandler.setRequestMethod(requestMethod);
-		return httpHandler;
-	}
-
-	@Override
-	public void updateRecord(String recordId, String fedoraXML) {
-		throwErrorIfRecordDoesNotExist(recordId);
-		int responseCode = updateRecordInFedora(recordId, fedoraXML);
-		throwErrorIfUpdateFailed(responseCode, recordId);
-	}
-
-	private void throwErrorIfRecordDoesNotExist(String recordId) {
-		int headResponseCode = readHeadForRecord(recordId);
-		if (headResponseCode == NOT_FOUND) {
-			throw FedoraNotFoundException.withMessage(
-					MessageFormat.format(RECORD_NOT_FOUND_MESSAGE, "Record", recordId));
-		}
-		if (headResponseCode != OK) {
-			throw FedoraException.withMessage(MessageFormat.format(RECORD_ERROR_MESSAGE, recordId));
-		}
-	}
-
-	private int updateRecordInFedora(String recordId, String fedoraXML) {
-		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
-		return callFedora(httpHandler);
-	}
-
-	private int callFedora(HttpHandler httpHandler) {
-		return httpHandler.getResponseCode();
-	}
-
-	private void throwErrorIfUpdateFailed(int responseCode, String recordId) {
-		if (responseCode != NO_CONTENT) {
-			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
-		}
-	}
-
-	@Override
-	public void createBinary(String recordId, InputStream binary, String contentType) {
-		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
-		httpHandler.setRequestProperty("Content-Type", contentType);
-		httpHandler.setStreamOutput(binary);
-
-		int responseCode = callFedora(httpHandler);
-		if (responseCode != CREATED) {
-			throw FedoraException.withMessage(createBinaryStoreErrorMessage(recordId));
-		}
-	}
-
-	private String createBinaryStoreErrorMessage(String recordId) {
-		return MessageFormat.format(BINARY_ERROR_MESSAGE, recordId);
 	}
 
 	@Override
@@ -211,13 +193,73 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public void updateBinary(String recordId, InputStream binary, String binaryContentType) {
-		// TODO Auto-generated method stub
-		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
-		httpHandler.setRequestProperty("Content-Type", binaryContentType);
-		httpHandler.setStreamOutput(binary);
-		callFedora(httpHandler);
+	public void updateRecord(String recordId, String fedoraXML) {
+		ensureRecordExists(recordId);
+		updateRecordInFedora(recordId, fedoraXML);
+	}
 
+	private void updateRecordInFedora(String recordId, String fedoraXML) {
+		HttpHandler httpHandler = setupHttpHandlerForStore(recordId, fedoraXML);
+		int responseCode = callFedora(httpHandler);
+		throwErrorIfUpdateFailed(responseCode, recordId);
+	}
+
+	private void ensureRecordExists(String recordId) {
+		int headResponseCode = readHeadForRecord(recordId);
+		throwErrorIfRecordDoesNotExist(recordId, headResponseCode);
+	}
+
+	private void throwErrorIfRecordDoesNotExist(String recordId, int headResponseCode) {
+		if (headResponseCode == NOT_FOUND) {
+			throw FedoraNotFoundException.withMessage(
+					MessageFormat.format(RECORD_NOT_FOUND_MESSAGE, "Record", recordId));
+		}
+		if (headResponseCode != OK) {
+			throw FedoraException.withMessage(MessageFormat.format(RECORD_ERROR_MESSAGE, recordId));
+		}
+	}
+
+	private void throwErrorIfUpdateFailed(int responseCode, String recordId) {
+		if (responseCode != NO_CONTENT) {
+			throw FedoraException.withMessage(createRecordStoreErrorMessage(recordId));
+		}
+	}
+
+	@Override
+	public void updateBinary(String recordId, InputStream binary, String binaryContentType) {
+		ensureBinaryExists(recordId);
+		updateBinaryInFedora(recordId, binary, binaryContentType);
+
+	}
+
+	private void updateBinaryInFedora(String recordId, InputStream binary,
+			String binaryContentType) {
+		HttpHandler httpHandler = httpPutBinary(recordId, binary, binaryContentType);
+		int responseCode = callFedora(httpHandler);
+		throwExceptionIfErrorOnUpdateBinary(recordId, responseCode);
+	}
+
+	private void ensureBinaryExists(String recordId) {
+		int headResponseCode = readHeadForRecord(recordId);
+		throwErrorIfBinaryIfErrorInFedora(recordId, headResponseCode);
+	}
+
+	private void throwErrorIfBinaryIfErrorInFedora(String recordId, int headResponseCode) {
+		if (headResponseCode == NOT_FOUND) {
+			throw FedoraNotFoundException
+					.withMessage(MessageFormat.format(BINARY_NOT_FOUND_MESSAGE, recordId));
+		}
+		if (headResponseCode != OK) {
+			throw FedoraException
+					.withMessage(MessageFormat.format(BINARY_UPDATE_ERROR_MESSAGE, recordId));
+		}
+	}
+
+	private void throwExceptionIfErrorOnUpdateBinary(String recordId, int responseCode) {
+		if (responseCode != NO_CONTENT) {
+			throw FedoraException
+					.withMessage(MessageFormat.format(BINARY_UPDATE_ERROR_MESSAGE, recordId));
+		}
 	}
 
 	@Override
