@@ -30,6 +30,7 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraAdapterImp implements FedoraAdapter {
 
+	private static final String TOMBSTONE = "/fcr:tombstone";
 	private static final String RECORD = "record";
 	private static final int NO_CONTENT = 204;
 	private static final int OK = 200;
@@ -39,6 +40,9 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String RECORD_NOT_FOUND_MESSAGE = "{0} with id: {1} does not exist in Fedora.";
 	private static final String RECORD_CONFLICT_MESSAGE = "Record with id: {0} already exists in Fedora.";
 	private static final String BINARY_ERROR_MESSAGE = "Error storing binary in Fedora, recordId: {0}";
+	private static final String DELETE_NOT_FOUND_MESSAGE = "Unable to delete record or binary from fedora. Resource not found with recordId: {0}";
+	private static final String DELETE_ERROR_MESSAGE = "Error deleting record or binary in Fedora, recordId: {0}";
+
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
 
@@ -204,5 +208,46 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
 		return httpHandlerFactory;
+	}
+
+	@Override
+	public void updateBinary(String recordId, InputStream binary, String binaryContentType) {
+		// TODO Auto-generated method stub
+		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
+		httpHandler.setRequestProperty("Content-Type", binaryContentType);
+		httpHandler.setStreamOutput(binary);
+		callFedora(httpHandler);
+
+	}
+
+	@Override
+	public void delete(String recordId) {
+		deleteInFedora(recordId);
+		purgeInFedora(recordId);
+	}
+
+	private void purgeInFedora(String recordId) {
+		HttpHandler httpHandler = factorHttpHandler(recordId + TOMBSTONE, "DELETE");
+		int responseCode = httpHandler.getResponseCode();
+
+		throwExceptionIfDeleteNotOk(responseCode, recordId);
+	}
+
+	private void deleteInFedora(String recordId) {
+		HttpHandler httpHandler = factorHttpHandler(recordId, "DELETE");
+		int responseCode = httpHandler.getResponseCode();
+
+		throwExceptionIfDeleteNotOk(responseCode, recordId);
+	}
+
+	private void throwExceptionIfDeleteNotOk(int responseCode, String recordId) {
+		if (responseCode == NOT_FOUND) {
+			throw FedoraNotFoundException
+					.withMessage(MessageFormat.format(DELETE_NOT_FOUND_MESSAGE, recordId));
+		}
+
+		if (responseCode != NO_CONTENT) {
+			throw FedoraException.withMessage(MessageFormat.format(DELETE_ERROR_MESSAGE, recordId));
+		}
 	}
 }

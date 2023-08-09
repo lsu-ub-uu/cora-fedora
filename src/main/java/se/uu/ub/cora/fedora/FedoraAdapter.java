@@ -52,6 +52,8 @@ public interface FedoraAdapter {
 	 *            It is the identifier of the binary.
 	 * @param binary
 	 *            It is the binary file to store.
+	 * @param binaryContentType
+	 *            It is the content type of the binary to store.
 	 */
 	void createBinary(String recordId, InputStream binary, String binaryContentType);
 
@@ -76,7 +78,7 @@ public interface FedoraAdapter {
 	 *
 	 * @param recordId
 	 *            It is the identifier of the binary to be read.
-	 * @return InputStrem representation of the binary read from Fedora
+	 * @return InputStrem Representation of the binary read from Fedora
 	 */
 	InputStream readBinary(String recordId);
 
@@ -91,11 +93,42 @@ public interface FedoraAdapter {
 	 * thrown.
 	 *
 	 * @param recordId
-	 *            identifier of the record to store
+	 *            identifier of the record to update
 	 * @param recordXml
-	 *            payload to store
-	 * @return Response text from fedora
+	 *            payload to update
 	 */
 	void updateRecord(String recordId, String recordXml);
 
+	/**
+	 * Updates an existing binary in Fedora. The payload will update the binary with a new version
+	 * in Fedora.
+	 * <p>
+	 * If a record with the same recordId is not already stored in fedora a
+	 * {@link FedoraNotFoundException} will be thrown.
+	 * <p>
+	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param recordId
+	 *            identifier of the record to update
+	 * @param binary
+	 *            It is the binary file to update
+	 * @param binaryContentType
+	 *            It is the content type of the binary to update
+	 */
+	void updateBinary(String recordId, InputStream binary, String binaryContentType);
+
+	/**
+	 * Delete an existing record or binary in Fedora.
+	 * 
+	 * If a record or binary with the same recordId is not found in fedora a
+	 * {@link FedoraNotFoundException} will be thrown.
+	 * 
+	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param recordId
+	 *            identifier of the record or binary to delete
+	 */
+	void delete(String recordId);
 }

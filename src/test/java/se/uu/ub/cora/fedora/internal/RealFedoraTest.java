@@ -43,7 +43,7 @@ public class RealFedoraTest {
 
 	@BeforeMethod
 	public void setUp() {
-		baseUrl = "http://alvin-docker-fedora:8080/fcrepo/rest/plats/";
+		baseUrl = "http://alvin-fedora:8080/fcrepo/rest/plats/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
@@ -69,7 +69,7 @@ public class RealFedoraTest {
 
 	@Test(enabled = false)
 	public void testReadOk() {
-		String recordId = "someRecordId:010";
+		String recordId = "someRecordId:022";
 
 		String read = fedora.readRecord(recordId);
 		assertEquals(read, "");
@@ -88,17 +88,48 @@ public class RealFedoraTest {
 
 	}
 
-	@Test(enabled = false)
+	@Test(enabled = true)
 	public void testCreateBinaryOk() {
-		String recordId = "someRecordId:020";
+		String recordId = "someRecordId:030";
 
 		try {
 			// File initialFile = new File("/home/madde/workspace/bild.jpg");
-			File initialFile = new File("/home/pere/workspace/castle.jpg");
+			File initialFile = new File("/home/marcus/workspace/bg.jpg");
 			InputStream binary = new FileInputStream(initialFile);
 			fedora.createBinary(recordId, binary, "image/jpeg");
 
 		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	@Test(enabled = false)
+	public void testDeleteBinaryOK() throws Exception {
+		String recordId = "someRecordId:0242";
+
+		// try {
+		fedora.delete(recordId);
+
+		// } catch (FileNotFoundException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+
+	}
+
+	@Test(enabled = true)
+	public void testUpdateBinaryOK() throws Exception {
+		String recordId = "someRecordId:363";
+
+		try {
+			// File initialFile = new File("/home/madde/workspace/bild.jpg");
+			File initialFile = new File("/home/marcus/workspace/ghandi.jpg");
+			InputStream binary = new FileInputStream(initialFile);
+			fedora.updateBinary(recordId, binary, "image/jpeg");
+
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
