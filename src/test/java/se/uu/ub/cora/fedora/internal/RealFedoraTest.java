@@ -77,26 +77,26 @@ public class RealFedoraTest {
 	}
 
 	@Test(enabled = false)
-	public void testReadBinary() throws IOException {
+	public void testReadResouce() throws IOException {
 		String recordId = "someRecordId:020";
 		File targetFile = new File("/home/pere/workspace/castle2.jpg");
 		OutputStream outStream = new FileOutputStream(targetFile);
 
-		InputStream binary = fedora.readBinary(recordId);
+		InputStream resouce = fedora.readResource(recordId);
 
-		binary.transferTo(outStream);
+		resouce.transferTo(outStream);
 
 	}
 
-	@Test(enabled = true)
-	public void testCreateBinaryOk() {
+	@Test(enabled = false)
+	public void testCreateResouceOk() {
 		String recordId = "someRecordId:030";
 
 		try {
 			// File initialFile = new File("/home/madde/workspace/bild.jpg");
 			File initialFile = new File("/home/marcus/workspace/bg.jpg");
-			InputStream binary = new FileInputStream(initialFile);
-			fedora.createBinary(recordId, binary, "image/jpeg");
+			InputStream resouce = new FileInputStream(initialFile);
+			fedora.createResource(recordId, resouce, "image/jpeg");
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -106,7 +106,7 @@ public class RealFedoraTest {
 	}
 
 	@Test(enabled = false)
-	public void testDeleteBinaryOK() throws Exception {
+	public void testDeleteResouceOK() throws Exception {
 		String recordId = "someRecordId:0242";
 
 		// try {
@@ -119,15 +119,15 @@ public class RealFedoraTest {
 
 	}
 
-	@Test(enabled = true)
-	public void testUpdateBinaryOK() throws Exception {
+	@Test(enabled = false)
+	public void testUpdateResouceOK() throws Exception {
 		String recordId = "someRecordId:363";
 
 		try {
 			// File initialFile = new File("/home/madde/workspace/bild.jpg");
 			File initialFile = new File("/home/marcus/workspace/ghandi.jpg");
-			InputStream binary = new FileInputStream(initialFile);
-			fedora.updateBinary(recordId, binary, "image/jpeg");
+			InputStream resouce = new FileInputStream(initialFile);
+			fedora.updateResource(recordId, resouce, "image/jpeg");
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

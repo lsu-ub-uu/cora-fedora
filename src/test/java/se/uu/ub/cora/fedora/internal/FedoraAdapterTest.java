@@ -49,8 +49,11 @@ public class FedoraAdapterTest {
 	private String baseUrl;
 	private String recordXML = "<somexml></somexml>";
 	private String recordId = "someRecordId:001";
+	private String resourceId = "someResourceId:001";
 	private HttpHandlerSpy httpHandlerSpy0;
 	private HttpHandlerSpy httpHandlerSpy1;
+	private InputStream resource;
+	private String mimeType = "image/jpg";;
 
 	@BeforeMethod
 	public void setUp() {
@@ -61,8 +64,12 @@ public class FedoraAdapterTest {
 		httpHandlerSpy1 = new HttpHandlerSpy();
 		httpHandlerFactory.MRV.setReturnValues("factor", List.of(httpHandlerSpy0, httpHandlerSpy1),
 				baseUrl + recordId);
+		httpHandlerFactory.MRV.setReturnValues("factor", List.of(httpHandlerSpy0, httpHandlerSpy1),
+				baseUrl + resourceId);
 
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
+
+		resource = new InputStreamSpy();
 	}
 
 	@Test
@@ -154,29 +161,25 @@ public class FedoraAdapterTest {
 	}
 
 	@Test
-	public void testCreateBinary() throws Exception {
+	public void testCreateResource() throws Exception {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(CREATED));
 
-		InputStream binary = new InputStreamSpy();
-		String binaryContentType = "image/jpg";
+		fedora.createResource(resourceId, resource, mimeType);
 
-		fedora.createBinary(recordId, binary, binaryContentType);
-
-		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + resourceId);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "PUT");
-		httpHandlerSpy0.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
-				binaryContentType);
-		httpHandlerSpy0.MCR.assertParameters("setStreamOutput", 0, binary);
+		httpHandlerSpy0.MCR.assertParameters("setRequestProperty", 0, "Content-Type", mimeType);
+		httpHandlerSpy0.MCR.assertParameters("setStreamOutput", 0, resource);
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error storing binary in Fedora, recordId: someRecordId:001")
-	public void testCreateBinaryErrorWhileStoring() {
+			+ "Error storing resource in Fedora, recordId: someResourceId:001")
+	public void testCreateResourceErrorWhileStoring() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
-		InputStream binary = new InputStreamSpy();
-		fedora.createBinary(recordId, binary, "image/jpg");
+
+		fedora.createResource(resourceId, resource, mimeType);
 	}
 
 	@Test
@@ -209,33 +212,33 @@ public class FedoraAdapterTest {
 	}
 
 	@Test
-	public void testReadBinaryOk() throws Exception {
+	public void testReadResourceOk() throws Exception {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
 
-		InputStream binaryFromFedora = fedora.readBinary(recordId);
+		InputStream resourceFromFedora = fedora.readResource(resourceId);
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + resourceId);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "GET");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy0.MCR.assertMethodNotCalled("getResponseText");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseBinary");
-		httpHandlerSpy0.MCR.assertReturn("getResponseBinary", 0, binaryFromFedora);
+		httpHandlerSpy0.MCR.assertReturn("getResponseBinary", 0, resourceFromFedora);
 	}
 
 	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
-			+ "Binary with id: someRecordId:001 does not exist in Fedora.")
-	public void testReadBinaryNotFound() {
+			+ "Resource with id: someResourceId:001 does not exist in Fedora.")
+	public void testReadResourceNotFound() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
 
-		fedora.readBinary(recordId);
+		fedora.readResource(resourceId);
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error reading binary from Fedora, recordId: someRecordId:001")
-	public void testReadBinaryOtherError() {
+			+ "Error reading resource from Fedora, resourceId: someResourceId:001")
+	public void testReadResourceOtherError() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 
-		fedora.readBinary(recordId);
+		fedora.readResource(resourceId);
 	}
 
 	@Test
@@ -305,61 +308,48 @@ public class FedoraAdapterTest {
 	}
 
 	@Test
-	public void testUpdateBinaryOk() {
+	public void testUpdateResourceOk() {
 		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode", () -> OK);
 		httpHandlerSpy1.MRV.setSpecificReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
 
-		InputStream binaryStream = new InputStreamSpy();
-		String binaryContentType = "image/jpg";
+		fedora.updateResource(resourceId, resource, mimeType);
 
-		fedora.updateBinary(recordId, binaryStream, binaryContentType);
-
-		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + recordId);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, baseUrl + resourceId);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
-		httpHandlerFactory.MCR.assertParameters("factor", 1, baseUrl + recordId);
+		httpHandlerFactory.MCR.assertParameters("factor", 1, baseUrl + resourceId);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "PUT");
-		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
-				binaryContentType);
-		httpHandlerSpy1.MCR.assertParameters("setStreamOutput", 0, binaryStream);
+		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type", mimeType);
+		httpHandlerSpy1.MCR.assertParameters("setStreamOutput", 0, resource);
 		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
 	}
 
 	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
-			+ "Binary with id: someRecordId:001 does not exist in Fedora.")
-	public void testUpdateBinaryNotFound() throws Exception {
+			+ "Resource with id: someResourceId:001 does not exist in Fedora.")
+	public void testUpdateResourceNotFound() throws Exception {
 		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode", () -> NOT_FOUND);
 
-		InputStream binaryStream = new InputStreamSpy();
-		String binaryContentType = "image/jpg";
-
-		fedora.updateBinary(recordId, binaryStream, binaryContentType);
+		fedora.updateResource(resourceId, resource, mimeType);
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error updating binary in Fedora, recordId: someRecordId:001")
-	public void testUpdateBinaryAnyOtherErrorWhenCheckIfExists() throws Exception {
+			+ "Error updating resource in Fedora, resourceId: someResourceId:001")
+	public void testUpdateResourceAnyOtherErrorWhenCheckIfExists() throws Exception {
 		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode",
 				() -> INTERNAL_SERVER_ERROR);
 
-		InputStream binaryStream = new InputStreamSpy();
-		String binaryContentType = "image/jpg";
-
-		fedora.updateBinary(recordId, binaryStream, binaryContentType);
+		fedora.updateResource(resourceId, resource, mimeType);
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error updating binary in Fedora, recordId: someRecordId:001")
-	public void testUpdateBinaryAnyOtherErrorWhenUpdating() throws Exception {
+			+ "Error updating resource in Fedora, resourceId: someResourceId:001")
+	public void testUpdateResourceAnyOtherErrorWhenUpdating() throws Exception {
 		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode", () -> OK);
 		httpHandlerSpy1.MRV.setSpecificReturnValuesSupplier("getResponseCode",
 				() -> INTERNAL_SERVER_ERROR);
 
-		InputStream binaryStream = new InputStreamSpy();
-		String binaryContentType = "image/jpg";
-
-		fedora.updateBinary(recordId, binaryStream, binaryContentType);
+		fedora.updateResource(resourceId, resource, mimeType);
 	}
 
 	@Test
@@ -384,7 +374,7 @@ public class FedoraAdapterTest {
 	}
 
 	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
-			+ "Unable to delete record or binary from fedora. Resource not found with recordId: someRecordId:001")
+			+ "Unable to delete record or resource from fedora. Resource not found with id: someRecordId:001")
 	public void testDeleteRecordNotFound() throws Exception {
 		httpHandlerSpy0.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NOT_FOUND);
 
@@ -392,7 +382,7 @@ public class FedoraAdapterTest {
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error deleting record or binary in Fedora, recordId: someRecordId:001")
+			+ "Error deleting record or resource in Fedora, id: someRecordId:001")
 	public void testDeleteRecordAnyOtherError() {
 		httpHandlerSpy0.MRV.setDefaultReturnValuesSupplier("getResponseCode",
 				() -> INTERNAL_SERVER_ERROR);
@@ -400,7 +390,7 @@ public class FedoraAdapterTest {
 	}
 
 	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error deleting record or binary in Fedora, recordId: someRecordId:001")
+			+ "Error deleting record or resource in Fedora, id: someRecordId:001")
 	public void testDeleteRecordErrorOnPurge() {
 		httpHandlerSpy0.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
 		httpHandlerSpy1.MRV.setDefaultReturnValuesSupplier("getResponseCode",

@@ -40,25 +40,29 @@ public interface FedoraAdapter {
 	 * @param recordId
 	 *            identifier of the record to store
 	 * @param recordXml
-	 *            payload to store
+	 *            payload to store in XML
 	 * @return Response text from fedora
 	 */
 	void createRecord(String recordId, String recordXml);
 
 	/**
-	 * Stores a new binary in Fedora
+	 * Stores a new resource in Fedora
 	 * 
-	 * @param binaryId
-	 *            It is the identifier of the binary.
-	 * @param binary
-	 *            It is the binary file to store.
-	 * @param binaryContentType
-	 *            It is the content type of the binary to store.
+	 * @param resourceId
+	 *            It is the identifier of the resource.
+	 * @param resource
+	 *            It is the resource file to store.
+	 * @param mimeType
+	 *            It is the mimeType of the resource to store.
 	 */
-	void createBinary(String recordId, InputStream binary, String binaryContentType);
+	void createResource(String resourceId, InputStream resource, String mimeType);
 
 	/**
 	 * Reads a record from fedora using recordId
+	 * <p>
+	 * <p>
+	 * If a record with the specified recordId is not found in fedora a
+	 * {@link FedoraNotFoundException} will be thrown.
 	 * <p>
 	 * If there are problems while reading the record in Fedora a {@link FedoraException} will be
 	 * thrown.
@@ -70,17 +74,17 @@ public interface FedoraAdapter {
 	String readRecord(String recordId);
 
 	/**
-	 * Reads binary from fedora using recorid as identifier.
+	 * Reads resource from fedora using recorid as identifier.
 	 * <p>
-	 * If a record with the specified recordId is not found in fedora a
+	 * If the resource with the specified resourceId is not found in fedora a
 	 * {@link FedoraNotFoundException} will be thrown.
 	 * <p>
 	 *
-	 * @param recordId
-	 *            It is the identifier of the binary to be read.
-	 * @return InputStrem Representation of the binary read from Fedora
+	 * @param resourceId
+	 *            It is the identifier of the resource to be read.
+	 * @return InputStrem Representation of the resource read from Fedora
 	 */
-	InputStream readBinary(String recordId);
+	InputStream readResource(String resourceId);
 
 	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of
@@ -100,35 +104,35 @@ public interface FedoraAdapter {
 	void updateRecord(String recordId, String recordXml);
 
 	/**
-	 * Updates an existing binary in Fedora. The payload will update the binary with a new version
-	 * in Fedora.
+	 * Updates an existing resource in Fedora. The payload will update the resource with a new
+	 * version in Fedora.
 	 * <p>
-	 * If a record with the same recordId is not already stored in fedora a
+	 * If a resource with the same resourceId is not already stored in fedora a
 	 * {@link FedoraNotFoundException} will be thrown.
 	 * <p>
 	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 * 
-	 * @param recordId
+	 * @param resourceId
 	 *            identifier of the record to update
-	 * @param binary
-	 *            It is the binary file to update
-	 * @param binaryContentType
-	 *            It is the content type of the binary to update
+	 * @param resource
+	 *            It is the resource to update
+	 * @param mimeType
+	 *            It is the mimeType of the resource to update
 	 */
-	void updateBinary(String recordId, InputStream binary, String binaryContentType);
+	void updateResource(String resourceId, InputStream resource, String mimeType);
 
 	/**
-	 * Delete an existing record or binary in Fedora.
+	 * Delete an existing record or resource in Fedora.
 	 * 
-	 * If a record or binary with the same recordId is not found in fedora a
+	 * If a record or resource with the same id is not found in fedora a
 	 * {@link FedoraNotFoundException} will be thrown.
 	 * 
 	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 * 
-	 * @param recordId
-	 *            identifier of the record or binary to delete
+	 * @param id
+	 *            identifier of the record or resource to delete
 	 */
-	void delete(String recordId);
+	void delete(String id);
 }

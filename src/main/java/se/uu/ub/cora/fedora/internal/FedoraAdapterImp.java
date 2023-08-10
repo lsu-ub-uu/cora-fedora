@@ -43,11 +43,12 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String RECORD_ERROR_MESSAGE = "Error storing record in Fedora, recordId: {0}";
 	private static final String RECORD_NOT_FOUND_MESSAGE = "{0} with id: {1} does not exist in Fedora.";
 	private static final String RECORD_CONFLICT_MESSAGE = "Record with id: {0} already exists in Fedora.";
-	private static final String BINARY_ERROR_MESSAGE = "Error storing binary in Fedora, recordId: {0}";
-	private static final String BINARY_UPDATE_ERROR_MESSAGE = "Error updating binary in Fedora, recordId: {0}";
-	private static final String BINARY_NOT_FOUND_MESSAGE = "Binary with id: {0} does not exist in Fedora.";
-	private static final String DELETE_NOT_FOUND_MESSAGE = "Unable to delete record or binary from fedora. Resource not found with recordId: {0}";
-	private static final String DELETE_ERROR_MESSAGE = "Error deleting record or binary in Fedora, recordId: {0}";
+	private static final String RESOURCE_ERROR_MESSAGE = "Error storing resource in Fedora, recordId: {0}";
+	private static final String RESOURCE_UPDATE_ERROR_MESSAGE = "Error updating resource in Fedora, resourceId: {0}";
+	private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource with id: {0} does not exist in Fedora.";
+	private static final String DELETE_NOT_FOUND_MESSAGE = "Unable to delete record or resource from fedora. Resource not found with id: {0}";
+	private static final String DELETE_ERROR_MESSAGE = "Error deleting record or resource in Fedora, id: {0}";
+	private static final String READ_ERROR_MESSAGE = "Error reading {0} from Fedora, {0}Id: {1}";
 
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
@@ -123,24 +124,24 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public void createBinary(String recordId, InputStream binary, String contentType) {
-		HttpHandler httpHandler = httpPutBinary(recordId, binary, contentType);
+	public void createResource(String resourceId, InputStream resource, String contentType) {
+		HttpHandler httpHandler = httpPutResource(resourceId, resource, contentType);
 
 		int responseCode = callFedora(httpHandler);
 		if (responseCode != CREATED) {
-			throw FedoraException.withMessage(createBinaryStoreErrorMessage(recordId));
+			throw FedoraException.withMessage(createResourceStoreErrorMessage(resourceId));
 		}
 	}
 
-	private HttpHandler httpPutBinary(String recordId, InputStream binary, String contentType) {
+	private HttpHandler httpPutResource(String recordId, InputStream resource, String mimeType) {
 		HttpHandler httpHandler = factorHttpHandler(recordId, "PUT");
-		httpHandler.setRequestProperty(CONTENT_TYPE, contentType);
-		httpHandler.setStreamOutput(binary);
+		httpHandler.setRequestProperty(CONTENT_TYPE, mimeType);
+		httpHandler.setStreamOutput(resource);
 		return httpHandler;
 	}
 
-	private String createBinaryStoreErrorMessage(String recordId) {
-		return MessageFormat.format(BINARY_ERROR_MESSAGE, recordId);
+	private String createResourceStoreErrorMessage(String resourceId) {
+		return MessageFormat.format(RESOURCE_ERROR_MESSAGE, resourceId);
 	}
 
 	@Override
@@ -158,7 +159,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		}
 		if (responseCode != OK) {
 			throw FedoraException
-					.withMessage("Error reading " + type + " from Fedora, recordId: " + recordId);
+					.withMessage(MessageFormat.format(READ_ERROR_MESSAGE, type, recordId));
 		}
 	}
 
@@ -173,15 +174,15 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public InputStream readBinary(String recordId) {
-		HttpHandler httpHandler = factorHttpHandler(recordId, "GET");
+	public InputStream readResource(String resourceId) {
+		HttpHandler httpHandler = factorHttpHandler(resourceId, "GET");
 		int responseCode = httpHandler.getResponseCode();
-		throwErrorIfReadBinaryNotOk(responseCode, recordId);
+		throwErrorIfReadResourceNotOk(responseCode, resourceId);
 		return httpHandler.getResponseBinary();
 	}
 
-	private void throwErrorIfReadBinaryNotOk(int responseCode, String recordId) {
-		throwErrorIfReadNotOk(responseCode, recordId, "binary");
+	private void throwErrorIfReadResourceNotOk(int responseCode, String recordId) {
+		throwErrorIfReadNotOk(responseCode, recordId, "resource");
 	}
 
 	public String onlyForTestGetBaseUrl() {
@@ -226,60 +227,59 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
-	public void updateBinary(String recordId, InputStream binary, String binaryContentType) {
-		ensureBinaryExists(recordId);
-		updateBinaryInFedora(recordId, binary, binaryContentType);
+	public void updateResource(String resourceId, InputStream resource, String mimeType) {
+		ensureResourceExists(resourceId);
+		updateResourceInFedora(resourceId, resource, mimeType);
 
 	}
 
-	private void updateBinaryInFedora(String recordId, InputStream binary,
-			String binaryContentType) {
-		HttpHandler httpHandler = httpPutBinary(recordId, binary, binaryContentType);
+	private void updateResourceInFedora(String resourceId, InputStream resource, String mimeType) {
+		HttpHandler httpHandler = httpPutResource(resourceId, resource, mimeType);
 		int responseCode = callFedora(httpHandler);
-		throwExceptionIfErrorOnUpdateBinary(recordId, responseCode);
+		throwExceptionIfErrorOnUpdateResource(resourceId, responseCode);
 	}
 
-	private void ensureBinaryExists(String recordId) {
-		int headResponseCode = readHeadForRecord(recordId);
-		throwErrorIfBinaryIfErrorInFedora(recordId, headResponseCode);
+	private void ensureResourceExists(String resourceId) {
+		int headResponseCode = readHeadForRecord(resourceId);
+		throwErrorIfResourceIfErrorInFedora(resourceId, headResponseCode);
 	}
 
-	private void throwErrorIfBinaryIfErrorInFedora(String recordId, int headResponseCode) {
-		if (headResponseCode == NOT_FOUND) {
+	private void throwErrorIfResourceIfErrorInFedora(String resourceId, int responseCode) {
+		if (responseCode == NOT_FOUND) {
 			throw FedoraNotFoundException
-					.withMessage(MessageFormat.format(BINARY_NOT_FOUND_MESSAGE, recordId));
+					.withMessage(MessageFormat.format(RESOURCE_NOT_FOUND_MESSAGE, resourceId));
 		}
-		if (headResponseCode != OK) {
+		if (responseCode != OK) {
 			throw FedoraException
-					.withMessage(MessageFormat.format(BINARY_UPDATE_ERROR_MESSAGE, recordId));
+					.withMessage(MessageFormat.format(RESOURCE_UPDATE_ERROR_MESSAGE, resourceId));
 		}
 	}
 
-	private void throwExceptionIfErrorOnUpdateBinary(String recordId, int responseCode) {
+	private void throwExceptionIfErrorOnUpdateResource(String resourceId, int responseCode) {
 		if (responseCode != NO_CONTENT) {
 			throw FedoraException
-					.withMessage(MessageFormat.format(BINARY_UPDATE_ERROR_MESSAGE, recordId));
+					.withMessage(MessageFormat.format(RESOURCE_UPDATE_ERROR_MESSAGE, resourceId));
 		}
 	}
 
 	@Override
-	public void delete(String recordId) {
-		deleteInFedora(recordId);
-		purgeInFedora(recordId);
+	public void delete(String id) {
+		deleteInFedora(id);
+		purgeInFedora(id);
 	}
 
-	private void purgeInFedora(String recordId) {
-		HttpHandler httpHandler = factorHttpHandler(recordId + TOMBSTONE, "DELETE");
+	private void purgeInFedora(String id) {
+		HttpHandler httpHandler = factorHttpHandler(id + TOMBSTONE, "DELETE");
 		int responseCode = httpHandler.getResponseCode();
 
-		throwExceptionIfDeleteNotOk(responseCode, recordId);
+		throwExceptionIfDeleteNotOk(responseCode, id);
 	}
 
-	private void deleteInFedora(String recordId) {
-		HttpHandler httpHandler = factorHttpHandler(recordId, "DELETE");
+	private void deleteInFedora(String id) {
+		HttpHandler httpHandler = factorHttpHandler(id, "DELETE");
 		int responseCode = httpHandler.getResponseCode();
 
-		throwExceptionIfDeleteNotOk(responseCode, recordId);
+		throwExceptionIfDeleteNotOk(responseCode, id);
 	}
 
 	private void throwExceptionIfDeleteNotOk(int responseCode, String recordId) {
