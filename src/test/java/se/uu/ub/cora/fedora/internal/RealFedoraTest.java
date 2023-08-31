@@ -54,7 +54,7 @@ public class RealFedoraTest {
 		String fedoraXML = "<trying>hello</trying>";
 		String recordId = "someRecordId:112";
 
-		fedora.createRecord(recordId, fedoraXML);
+		fedora.createRecord(null, recordId, fedoraXML);
 
 	}
 
@@ -63,7 +63,7 @@ public class RealFedoraTest {
 		String fedoraXML = "<trying>helloUpdated</trying>";
 		String recordId = "someRecordId:114";
 
-		fedora.updateRecord(recordId, fedoraXML);
+		fedora.updateRecord(null, recordId, fedoraXML);
 
 	}
 
@@ -71,7 +71,7 @@ public class RealFedoraTest {
 	public void testReadOk() {
 		String recordId = "someRecordId:022";
 
-		String read = fedora.readRecord(recordId);
+		String read = fedora.readRecord(null, recordId);
 		assertEquals(read, "");
 
 	}
@@ -82,7 +82,7 @@ public class RealFedoraTest {
 		File targetFile = new File("/home/pere/workspace/castle2.jpg");
 		OutputStream outStream = new FileOutputStream(targetFile);
 
-		InputStream resouce = fedora.readResource(recordId);
+		InputStream resouce = fedora.readResource(null, recordId);
 
 		resouce.transferTo(outStream);
 
@@ -96,7 +96,7 @@ public class RealFedoraTest {
 			// File initialFile = new File("/home/madde/workspace/bild.jpg");
 			File initialFile = new File("/home/marcus/workspace/bg.jpg");
 			InputStream resouce = new FileInputStream(initialFile);
-			fedora.createResource(recordId, resouce, "image/jpeg");
+			fedora.createResource(null, recordId, resouce, "image/jpeg");
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -110,7 +110,7 @@ public class RealFedoraTest {
 		String recordId = "someRecordId:0242";
 
 		// try {
-		fedora.delete(recordId);
+		fedora.deleteRecord(null, recordId);
 
 		// } catch (FileNotFoundException e) {
 		// // TODO Auto-generated catch block
@@ -127,7 +127,7 @@ public class RealFedoraTest {
 			// File initialFile = new File("/home/madde/workspace/bild.jpg");
 			File initialFile = new File("/home/marcus/workspace/ghandi.jpg");
 			InputStream resouce = new FileInputStream(initialFile);
-			fedora.updateResource(recordId, resouce, "image/jpeg");
+			fedora.updateResource(null, recordId, resouce, "image/jpeg");
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
