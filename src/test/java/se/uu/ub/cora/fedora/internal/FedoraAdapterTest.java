@@ -531,7 +531,6 @@ public class FedoraAdapterTest {
 			fedora.updateRecord(dataDivider, SOME_RECORD_ID, recordXML);
 			assertTrue(false);
 		} catch (Exception e) {
-			System.out.println(e.getClass().getName());
 			assertTrue(e instanceof FedoraException);
 			assertEquals(e.getMessage(),
 					MessageFormat.format(INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD, UPDATING));
