@@ -63,21 +63,29 @@ public class FedoraAdapterTest {
 
 	private static final String RECORD = "record";
 	private static final String RESOURCE = "resource";
+	private static final String CREATION = "Creation";
+	private static final String READING = "Reading";
+	private static final String UPDATING = "Updating";
+
+	private static final String INTERNAL_ERROR_MESSAGE = "{2} error: an internal "
+			+ "error has been thrown for {1} id {0}.";
 
 	private static final String CREATE_CONFLICT_MESSAGE = "Creation error: {1} with id {0} "
 			+ "already exists in Fedora.";
-	private static final String CREATE_ERROR_MESSAGE = "Creation Error: {2} id {0} could not be created due to error {1} returned from Fedora";
-	private static final String CREATE_INTERNAL_ERROR_MESSAGE = "Creation Error: {1} id {0} could not be created due to an internal error.";
-
-	private static final String READ_ERROR_MESSAGE = "Error reading {0} from Fedora, {0}Id: {1}";
-	private static final String RECORD_ERROR_MESSAGE = "Error storing record in Fedora, SOME_RECORD_ID: {0}";
-	private static final String RECORD_NOT_FOUND_MESSAGE = "{0} with id: {1} does not exist in Fedora.";
-	private static final String RESOURCE_ERROR_MESSAGE = "Error storing resource in Fedora, SOME_RECORD_ID: {0}";
-	private static final String RESOURCE_UPDATE_ERROR_MESSAGE = "Error updating resource in Fedora, SOME_RESOURCE_ID: {0}";
-	private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource with id: {0} does not exist in Fedora.";
+	private static final String CREATE_ERROR_MESSAGE = "Creation error: {2} id {0} could not be "
+			+ "created due to error {1} returned from Fedora";
+	private static final String READ_NOT_FOUND_MESSAGE = "Reading error: The {1} "
+			+ "could not be read from Fedora. No {1} was found with the id {0}";
+	private static final String READ_ERROR_MESSAGE = "Reading error: {2} id {0} could not be read"
+			+ " due to error {1} returned from Fedora";
+	private static final String UPDATE_NOT_FOUND_MESSAGE = "Updating error: The {1} "
+			+ "could not be updated in Fedora. No {1} was found with the id {0}";
+	private static final String UPDATE_ERROR_MESSAGE = "Updating error: {2} id {0} could not be "
+			+ "updated due to error {1} returned from Fedora";
 	private static final String DELETE_NOT_FOUND_MESSAGE = "Deletion Error: The resource "
 			+ "could not be removed from Fedora. No resource was found with the id {0}";
-	private static final String DELETE_ERROR_MESSAGE = "Deletion Error: {2} id {0} could not be deleted due to error {1} returned from Fedora";
+	private static final String DELETE_ERROR_MESSAGE = "Deletion Error: {2} id {0} could not be "
+			+ "deleted due to error {1} returned from Fedora";
 
 	@BeforeMethod
 	public void setUp() {
@@ -185,7 +193,7 @@ public class FedoraAdapterTest {
 		} catch (Exception e) {
 			assertTrue(e instanceof FedoraException);
 			assertEquals(e.getMessage(),
-					MessageFormat.format(CREATE_INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD));
+					MessageFormat.format(INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD, CREATION));
 			assertEquals(e.getCause().getMessage(), "errorFromSpy");
 		}
 	}
@@ -202,7 +210,7 @@ public class FedoraAdapterTest {
 		} catch (Exception e) {
 			assertTrue(e instanceof FedoraException);
 			assertEquals(e.getMessage(),
-					MessageFormat.format(CREATE_INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD));
+					MessageFormat.format(INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD, CREATION));
 			assertEquals(e.getCause().getMessage(), "errorFromSpy");
 		}
 	}
@@ -280,8 +288,25 @@ public class FedoraAdapterTest {
 			assertTrue(false);
 		} catch (Exception e) {
 			assertTrue(e instanceof FedoraException);
-			assertEquals(e.getMessage(), MessageFormat.format(CREATE_INTERNAL_ERROR_MESSAGE,
-					SOME_RESOURCE_ID, RESOURCE));
+			assertEquals(e.getMessage(), MessageFormat.format(INTERNAL_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, RESOURCE, CREATION));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
+	}
+
+	@Test
+	public void testCreateResourceAnyOtherErrorAddXmlToHttpHandler() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
+		httpHandlerSpy1.MRV.setAlwaysThrowException("setStreamOutput",
+				new RuntimeException("errorFromSpy"));
+
+		try {
+			fedora.createResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(INTERNAL_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, RESOURCE, CREATION));
 			assertEquals(e.getCause().getMessage(), "errorFromSpy");
 		}
 	}
@@ -301,18 +326,47 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertReturn("getResponseText", 0, recordFromFedora);
 	}
 
-	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
-			+ "Record with id: someRecordId:001 does not exist in Fedora.")
+	@Test
 	public void testReadRecordRecordNotFound() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
-		fedora.readRecord(dataDivider, SOME_RECORD_ID);
+
+		try {
+			fedora.readRecord(dataDivider, SOME_RECORD_ID);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraNotFoundException);
+			assertEquals(e.getMessage(),
+					MessageFormat.format(READ_NOT_FOUND_MESSAGE, SOME_RECORD_ID, RECORD));
+		}
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error reading record from Fedora, SOME_RECORD_ID: someRecordId:001")
-	public void testReadRecordErrorReading() {
+	@Test
+	public void testReadRecordErrorReadingFromFedora() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
-		fedora.readRecord(dataDivider, SOME_RECORD_ID);
+
+		try {
+			fedora.readRecord(dataDivider, SOME_RECORD_ID);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(READ_ERROR_MESSAGE, SOME_RECORD_ID,
+					INTERNAL_SERVER_ERROR, RECORD));
+		}
+	}
+
+	@Test
+	public void testReadRecordErrorOnHttpHandler() {
+		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
+				expectedRecordPath + SOME_RECORD_ID);
+		try {
+			fedora.readRecord(dataDivider, SOME_RECORD_ID);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(),
+					MessageFormat.format(INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD, READING));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
 	}
 
 	@Test
@@ -330,20 +384,47 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertReturn("getResponseBinary", 0, resourceFromFedora);
 	}
 
-	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
-			+ "Resource with id: someResourceId:001 does not exist in Fedora.")
+	@Test
 	public void testReadResourceNotFound() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
 
-		fedora.readResource(dataDivider, SOME_RESOURCE_ID);
+		try {
+			fedora.readResource(dataDivider, SOME_RESOURCE_ID);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraNotFoundException);
+			assertEquals(e.getMessage(),
+					MessageFormat.format(READ_NOT_FOUND_MESSAGE, SOME_RESOURCE_ID, RESOURCE));
+		}
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error reading resource from Fedora, resourceId: someResourceId:001")
-	public void testReadResourceOtherError() {
+	@Test
+	public void testReadResourceErrorReadingFromFedora() {
 		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 
-		fedora.readResource(dataDivider, SOME_RESOURCE_ID);
+		try {
+			fedora.readResource(dataDivider, SOME_RESOURCE_ID);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(READ_ERROR_MESSAGE, SOME_RESOURCE_ID,
+					INTERNAL_SERVER_ERROR, RESOURCE));
+		}
+	}
+
+	@Test
+	public void testReadResourceErrorOnHttpHandler() {
+		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
+				expectedResourcePath + SOME_RESOURCE_ID);
+		try {
+			fedora.readResource(dataDivider, SOME_RESOURCE_ID);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(INTERNAL_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, RESOURCE, READING));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
 	}
 
 	@Test
@@ -375,7 +456,7 @@ public class FedoraAdapterTest {
 		} catch (Exception e) {
 			assertTrue(e instanceof FedoraNotFoundException);
 			assertEquals(e.getMessage(),
-					"Record with id: someRecordId:001 does not exist in Fedora.");
+					MessageFormat.format(UPDATE_NOT_FOUND_MESSAGE, SOME_RECORD_ID, RECORD));
 		}
 
 		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RECORD_ID);
@@ -394,8 +475,8 @@ public class FedoraAdapterTest {
 			assertTrue(false);
 		} catch (Exception e) {
 			assertTrue(e instanceof FedoraException);
-			assertEquals(e.getMessage(),
-					"Error storing record in Fedora, SOME_RECORD_ID: someRecordId:001");
+			assertEquals(e.getMessage(), MessageFormat.format(UPDATE_ERROR_MESSAGE, SOME_RECORD_ID,
+					INTERNAL_SERVER_ERROR, RECORD));
 		}
 
 		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RECORD_ID);
@@ -405,11 +486,57 @@ public class FedoraAdapterTest {
 		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 1);
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error storing record in Fedora, SOME_RECORD_ID: someRecordId:001")
-	public void testUpdateRecordError() {
+	@Test
+	public void testUpdateRecordErrorUpdatingInFedora() {
 		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
-		fedora.updateRecord(dataDivider, SOME_RECORD_ID, recordXML);
+
+		try {
+			fedora.updateRecord(dataDivider, SOME_RECORD_ID, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(UPDATE_ERROR_MESSAGE, SOME_RECORD_ID,
+					INTERNAL_SERVER_ERROR, RECORD));
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RECORD_ID);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 2);
+	}
+
+	@Test
+	public void testUpdateRecordErrorOnHttpHandler() {
+		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
+				expectedRecordPath + SOME_RECORD_ID);
+		try {
+			fedora.updateRecord(dataDivider, SOME_RECORD_ID, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(),
+					MessageFormat.format(INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD, UPDATING));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
+	}
+
+	@Test
+	public void testUpdateRecordErrorOnSecondHttpHandler() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
+		httpHandlerSpy1.MRV.setAlwaysThrowException("setOutput",
+				new RuntimeException("errorFromSpy"));
+
+		try {
+			fedora.updateRecord(dataDivider, SOME_RECORD_ID, recordXML);
+			assertTrue(false);
+		} catch (Exception e) {
+			System.out.println(e.getClass().getName());
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(),
+					MessageFormat.format(INTERNAL_ERROR_MESSAGE, SOME_RECORD_ID, RECORD, UPDATING));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
 	}
 
 	@Test
@@ -432,31 +559,99 @@ public class FedoraAdapterTest {
 		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
 	}
 
-	@Test(expectedExceptions = FedoraNotFoundException.class, expectedExceptionsMessageRegExp = ""
-			+ "Resource with id: someResourceId:001 does not exist in Fedora.")
-	public void testUpdateResourceNotFound() throws Exception {
-		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode", () -> NOT_FOUND);
+	@Test
+	public void testUpdateResourceNoRecordExistsWithId() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(NOT_FOUND));
 
-		fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+		try {
+			fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraNotFoundException);
+			assertEquals(e.getMessage(),
+					MessageFormat.format(UPDATE_NOT_FOUND_MESSAGE, SOME_RESOURCE_ID, RESOURCE));
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0,
+				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 1);
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error updating resource in Fedora, resourceId: someResourceId:001")
-	public void testUpdateResourceAnyOtherErrorWhenCheckIfExists() throws Exception {
-		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode",
-				() -> INTERNAL_SERVER_ERROR);
+	@Test
+	public void testUpdateResourceErrorCheckingIfRecordExists() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
 
-		fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+		try {
+			fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(UPDATE_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, INTERNAL_SERVER_ERROR, RESOURCE));
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0,
+				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 1);
 	}
 
-	@Test(expectedExceptions = FedoraException.class, expectedExceptionsMessageRegExp = ""
-			+ "Error updating resource in Fedora, resourceId: someResourceId:001")
-	public void testUpdateResourceAnyOtherErrorWhenUpdating() throws Exception {
+	@Test
+	public void testUpdateResourceErrorUpdatingInFedora() {
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(INTERNAL_SERVER_ERROR));
+
+		try {
+			fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(UPDATE_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, INTERNAL_SERVER_ERROR, RESOURCE));
+		}
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0,
+				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
+		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
+
+		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 2);
+	}
+
+	@Test
+	public void testUpdateResourceErrorOnHttpHandler() {
+		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
+				expectedResourcePath + SOME_RESOURCE_ID);
+		try {
+			fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(INTERNAL_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, RESOURCE, UPDATING));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
+	}
+
+	@Test
+	public void testUpdateResourceErrorOnSecondHttpHandler() {
 		httpHandlerSpy0.MRV.setSpecificReturnValuesSupplier("getResponseCode", () -> OK);
-		httpHandlerSpy1.MRV.setSpecificReturnValuesSupplier("getResponseCode",
-				() -> INTERNAL_SERVER_ERROR);
+		httpHandlerSpy1.MRV.setAlwaysThrowException("setStreamOutput",
+				new RuntimeException("errorFromSpy"));
 
-		fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+		try {
+			fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof FedoraException);
+			assertEquals(e.getMessage(), MessageFormat.format(INTERNAL_ERROR_MESSAGE,
+					SOME_RESOURCE_ID, RESOURCE, UPDATING));
+			assertEquals(e.getCause().getMessage(), "errorFromSpy");
+		}
 	}
 
 	@Test
