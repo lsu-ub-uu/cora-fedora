@@ -37,7 +37,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final int NO_CONTENT = 204;
 	private static final int NOT_FOUND = 404;
 
-	private static final String TEXT_PLAIN_UTF_8 = "text/plain;charset=utf-8";
+	private static final String MIME_TYPE_TEXT_PLAIN_UTF_8 = "text/plain;charset=utf-8";
+	private static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	private static final String CONTENT_TYPE = "Content-Type";
 	private static final String TOMBSTONE = "/fcr:tombstone";
 	private static final String RECORD = "record";
@@ -155,7 +156,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private HttpHandler setupHttpHandlerForStoreRecord(String path, String fedoraXML) {
 
 		HttpHandler httpHandler = factorHttpHandler(path, "PUT");
-		httpHandler.setRequestProperty(CONTENT_TYPE, TEXT_PLAIN_UTF_8);
+		httpHandler.setRequestProperty(CONTENT_TYPE, MIME_TYPE_TEXT_PLAIN_UTF_8);
 		httpHandler.setOutput(fedoraXML);
 		return httpHandler;
 	}
@@ -230,7 +231,13 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private HttpHandler setUpHttpHandlerForRead(String path) {
 		HttpHandler httpHandler = factorHttpHandler(path, "GET");
-		httpHandler.setRequestProperty("Accept", TEXT_PLAIN_UTF_8);
+		httpHandler.setRequestProperty("Accept", MIME_TYPE_TEXT_PLAIN_UTF_8);
+		return httpHandler;
+	}
+
+	private HttpHandler setUpHttpHandlerForReadResource(String path) {
+		HttpHandler httpHandler = factorHttpHandler(path, "GET");
+		httpHandler.setRequestProperty("Accept", MIME_TYPE_OCTET_STREAM);
 		return httpHandler;
 	}
 
@@ -245,7 +252,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private Map<String, Object> callFedoraReadResource(String path, String recordId) {
 		try {
-			HttpHandler httpHandler = setUpHttpHandlerForRead(path);
+			HttpHandler httpHandler = setUpHttpHandlerForReadResource(path);
 			return createResponseForResource(httpHandler);
 		} catch (Exception e) {
 			throw createFedoraException(recordId, e, RESOURCE, "Reading");

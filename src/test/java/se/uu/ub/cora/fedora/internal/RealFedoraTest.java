@@ -43,7 +43,7 @@ public class RealFedoraTest {
 
 	@BeforeMethod
 	public void setUp() {
-		baseUrl = "http://alvin-fedora:8080/fcrepo/rest/plats/";
+		baseUrl = "http://systemone-fedora:8080/fcrepo/rest/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
@@ -76,13 +76,13 @@ public class RealFedoraTest {
 
 	}
 
-	@Test(enabled = false)
+	@Test(enabled = true)
 	public void testReadResouce() throws IOException {
-		String recordId = "someRecordId:020";
-		File targetFile = new File("/home/pere/workspace/castle2.jpg");
+		String recordId = "binary:binary:24583449702428-master";
+		File targetFile = new File("/home/pere/workspace/gokuForever.jpg");
 		OutputStream outStream = new FileOutputStream(targetFile);
 
-		InputStream resouce = fedora.readResource(null, recordId);
+		InputStream resouce = fedora.readResource("testSystem", recordId);
 
 		resouce.transferTo(outStream);
 
