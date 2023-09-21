@@ -37,48 +37,71 @@ public interface FedoraAdapter {
 	 * <p>
 	 * For any other problem a {@link FedoraException} will be thrown.
 	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
 	 * @param recordId
 	 *            identifier of the record to store
 	 * @param recordXml
-	 *            payload to store
+	 *            payload to store in XML
+	 * 
 	 * @return Response text from fedora
 	 */
-	void create(String recordId, String recordXml);
+	void createRecord(String dataDivider, String recordId, String recordXml);
 
 	/**
-	 * Stores a new binary in Fedora
+	 * Stores a new resource in Fedora
+	 * <p>
+	 * If a record with the same recordId is already stored in fedora a
+	 * {@link FedoraConflictException} will be thrown.
+	 * <p>
+	 * For any other problem a {@link FedoraException} will be thrown.
 	 * 
-	 * @param binaryId
-	 *            It is the identifier of the binary.
-	 * @param binary
-	 *            It is the binary file to store.
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
+	 * @param resourceId
+	 *            It is the identifier of the resource.
+	 * @param resource
+	 *            It is the resource file to store.
+	 * @param mimeType
+	 *            It is the mimeType of the resource to store.
 	 */
-	void createBinary(String recordId, InputStream binary, String binaryContentType);
+	void createResource(String dataDivider, String resourceId, InputStream resource,
+			String mimeType);
 
 	/**
 	 * Reads a record from fedora using recordId
 	 * <p>
-	 * If there are problems while reading the record in Fedora a {@link FedoraException} will be
-	 * thrown.
-	 * 
-	 * @param recordId
-	 *            identifies the record to read
-	 * @return record fecthed from fedora
-	 */
-	String read(String recordId);
-
-	/**
-	 * Reads binary from fedora using recorid as identifier.
 	 * <p>
 	 * If a record with the specified recordId is not found in fedora a
 	 * {@link FedoraNotFoundException} will be thrown.
 	 * <p>
-	 *
+	 * If there are problems while reading the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
 	 * @param recordId
-	 *            It is the identifier of the binary to be read.
-	 * @return InputStrem representation of the binary read from Fedora
+	 *            identifies the record to read
+	 * 
+	 * @return record fecthed from fedora
 	 */
-	InputStream readBinary(String recordId);
+	String readRecord(String dataDivider, String recordId);
+
+	/**
+	 * Reads resource from fedora using recorid as identifier.
+	 * <p>
+	 * If the resource with the specified resourceId is not found in fedora a
+	 * {@link FedoraNotFoundException} will be thrown.
+	 * <p>
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
+	 * @param resourceId
+	 *            It is the identifier of the resource to be read.
+	 *
+	 * @return InputStrem Representation of the resource read from Fedora
+	 */
+	InputStream readResource(String dataDivider, String resourceId);
 
 	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of
@@ -89,13 +112,67 @@ public interface FedoraAdapter {
 	 * <p>
 	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
 	 * thrown.
-	 *
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
 	 * @param recordId
-	 *            identifier of the record to store
+	 *            identifier of the record to update
 	 * @param recordXml
-	 *            payload to store
-	 * @return Response text from fedora
+	 *            payload to update
 	 */
-	void update(String recordId, String recordXml);
+	void updateRecord(String dataDivider, String recordId, String recordXml);
 
+	/**
+	 * Updates an existing resource in Fedora. The payload will update the resource with a new
+	 * version in Fedora.
+	 * <p>
+	 * If a resource with the same resourceId is not already stored in fedora a
+	 * {@link FedoraNotFoundException} will be thrown.
+	 * <p>
+	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
+	 * @param resourceId
+	 *            identifier of the resource to update
+	 * @param resource
+	 *            It is the resource to update
+	 * @param mimeType
+	 *            It is the mimeType of the resource to update
+	 */
+	void updateResource(String dataDivider, String resourceId, InputStream resource,
+			String mimeType);
+
+	/**
+	 * Delete an existing record in Fedora.
+	 * 
+	 * If a record with the same id is not found in fedora a {@link FedoraNotFoundException} will be
+	 * thrown.
+	 * 
+	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
+	 * @param recordId
+	 *            identifier of the record to delete
+	 */
+	void deleteRecord(String dataDivider, String recordId);
+
+	/**
+	 * Delete an existing reosurce in Fedora.
+	 * 
+	 * If a resource with the same id is not found in fedora a {@link FedoraNotFoundException} will
+	 * be thrown.
+	 * 
+	 * If there are problems while updating the resource in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the resource belongs
+	 * @param resourceId
+	 *            identifier of the resource to delete
+	 */
+	void deleteResource(String dataDivider, String resourceId);
 }

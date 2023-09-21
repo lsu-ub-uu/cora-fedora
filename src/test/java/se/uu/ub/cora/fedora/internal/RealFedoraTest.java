@@ -43,7 +43,7 @@ public class RealFedoraTest {
 
 	@BeforeMethod
 	public void setUp() {
-		baseUrl = "http://alvin-docker-fedora:8080/fcrepo/rest/plats/";
+		baseUrl = "http://systemone-fedora:8080/fcrepo/rest/";
 		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
 		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
@@ -54,7 +54,7 @@ public class RealFedoraTest {
 		String fedoraXML = "<trying>hello</trying>";
 		String recordId = "someRecordId:112";
 
-		fedora.create(recordId, fedoraXML);
+		fedora.createRecord(null, recordId, fedoraXML);
 
 	}
 
@@ -63,42 +63,73 @@ public class RealFedoraTest {
 		String fedoraXML = "<trying>helloUpdated</trying>";
 		String recordId = "someRecordId:114";
 
-		fedora.update(recordId, fedoraXML);
+		fedora.updateRecord(null, recordId, fedoraXML);
 
 	}
 
 	@Test(enabled = false)
 	public void testReadOk() {
-		String recordId = "someRecordId:010";
+		String recordId = "someRecordId:022";
 
-		String read = fedora.read(recordId);
+		String read = fedora.readRecord(null, recordId);
 		assertEquals(read, "");
 
 	}
 
-	@Test(enabled = false)
-	public void testReadBinary() throws IOException {
-		String recordId = "someRecordId:020";
-		File targetFile = new File("/home/pere/workspace/castle2.jpg");
+	@Test(enabled = true)
+	public void testReadResouce() throws IOException {
+		String recordId = "binary:binary:24583449702428-master";
+		File targetFile = new File("/home/pere/workspace/gokuForever.jpg");
 		OutputStream outStream = new FileOutputStream(targetFile);
 
-		InputStream binary = fedora.readBinary(recordId);
+		InputStream resouce = fedora.readResource("testSystem", recordId);
 
-		binary.transferTo(outStream);
+		resouce.transferTo(outStream);
 
 	}
 
 	@Test(enabled = false)
-	public void testCreateBinaryOk() {
-		String recordId = "someRecordId:020";
+	public void testCreateResouceOk() {
+		String recordId = "someRecordId:030";
 
 		try {
 			// File initialFile = new File("/home/madde/workspace/bild.jpg");
-			File initialFile = new File("/home/pere/workspace/castle.jpg");
-			InputStream binary = new FileInputStream(initialFile);
-			fedora.createBinary(recordId, binary, "image/jpeg");
+			File initialFile = new File("/home/marcus/workspace/bg.jpg");
+			InputStream resouce = new FileInputStream(initialFile);
+			fedora.createResource(null, recordId, resouce, "image/jpeg");
 
 		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	@Test(enabled = false)
+	public void testDeleteResouceOK() throws Exception {
+		String recordId = "someRecordId:0242";
+
+		// try {
+		fedora.deleteRecord(null, recordId);
+
+		// } catch (FileNotFoundException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+
+	}
+
+	@Test(enabled = false)
+	public void testUpdateResouceOK() throws Exception {
+		String recordId = "someRecordId:363";
+
+		try {
+			// File initialFile = new File("/home/madde/workspace/bild.jpg");
+			File initialFile = new File("/home/marcus/workspace/ghandi.jpg");
+			InputStream resouce = new FileInputStream(initialFile);
+			fedora.updateResource(null, recordId, resouce, "image/jpeg");
+
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
