@@ -76,7 +76,7 @@ public class RealFedoraTest {
 
 	}
 
-	@Test(enabled = true)
+	@Test(enabled = false)
 	public void testReadResouce() throws IOException {
 		String recordId = "binary:binary:24583449702428-master";
 		File targetFile = new File("/home/pere/workspace/gokuForever.jpg");
