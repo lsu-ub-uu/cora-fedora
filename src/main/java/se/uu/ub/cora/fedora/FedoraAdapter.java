@@ -103,6 +103,13 @@ public interface FedoraAdapter {
 	 */
 	InputStream readResource(String dataDivider, String resourceId);
 
+	ResourceMetadata readResourceMetadata(String dataDivider, String resourceId);
+
+	// void updateresourceMimeType(String dataDivider, String resourceId, String mimeType);
+	// OR?
+	// void updateResourceMetadata(String dataDivider, String resourceId,
+	// ResourceMetadata resourceMetadata);
+
 	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of
 	 * the record in Fedora.
