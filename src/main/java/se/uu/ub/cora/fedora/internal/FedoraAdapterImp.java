@@ -27,8 +27,10 @@ import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.FedoraNotFoundException;
+import se.uu.ub.cora.fedora.ResourceMetadata;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
+import se.uu.ub.cora.json.parser.JsonParser;
 
 public class FedoraAdapterImp implements FedoraAdapter {
 
@@ -41,6 +43,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	private static final String CONTENT_TYPE = "Content-Type";
 	private static final String TOMBSTONE = "/fcr:tombstone";
+	private static final String METADATA = "/fcr:metadata";
 	private static final String RECORD = "record";
 	private static final String RESOURCE = "resource";
 	private static final String RESPONSE_CODE = "responseCode";
@@ -71,10 +74,13 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
+	private JsonParser jsonParser;
 
-	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
+	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl,
+			JsonParser jsonParser) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.baseUrl = baseUrl;
+		this.jsonParser = jsonParser;
 	}
 
 	@Override
@@ -121,7 +127,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		return baseUrl + dataDivider + "/" + RECORD_FOLDER + recordId;
 	}
 
-	private String ensemblePathForResource(String dataDivider, String recordId) {
+	private String assemblePathForResource(String dataDivider, String recordId) {
 		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId;
 	}
 
@@ -164,7 +170,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public void createResource(String dataDivider, String resourceId, InputStream resource,
 			String contentType) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		ensureResourceNotExists(path, resourceId);
 		int responseCode = callFedoraToStoreResource(path, resourceId, resource, contentType);
 		throwErrorIfCreateNotOk(responseCode, resourceId, RESOURCE);
@@ -243,7 +249,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public InputStream readResource(String dataDivider, String resourceId) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		Map<String, Object> response = callFedoraReadResource(path, resourceId);
 		int responseCode = (int) response.get(RESPONSE_CODE);
 		throwErrorIfReadResourceNotOk(responseCode, resourceId);
@@ -276,6 +282,37 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
 		return httpHandlerFactory;
+	}
+
+	@Override
+	public ResourceMetadata readResourceMetadata(String dataDivider, String resourceId) {
+		String path = assemblePathForResourceMetadata(dataDivider, resourceId);
+		callFedoraReadResourceMetadata(path, resourceId);
+
+		return null;
+	}
+
+	private String assemblePathForResourceMetadata(String dataDivider, String recordId) {
+		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId + METADATA;
+	}
+
+	private ResourceMetadata callFedoraReadResourceMetadata(String path, String resourceId) {
+		try {
+			HttpHandler httpHandler = setUpHttpHandlerForReadResourceMetadata(path);
+			httpHandler.getResponseCode();
+			String jsonString = httpHandler.getResponseText();
+			jsonParser.parseStringAsObject(jsonString);
+		} catch (Exception e) {
+			throw createFedoraException(resourceId, e, RESOURCE, "Reading");
+		}
+		return null;
+
+	}
+
+	private HttpHandler setUpHttpHandlerForReadResourceMetadata(String path) {
+		HttpHandler httpHandler = factorHttpHandler(path, "GET");
+		httpHandler.setRequestProperty("Accept", "application/ld+json");
+		return httpHandler;
 	}
 
 	@Override
@@ -326,7 +363,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public void updateResource(String dataDivider, String resourceId, InputStream resource,
 			String mimeType) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		ensureResourceExistsForUpdate(path, resourceId);
 		updateResourceInFedora(path, resourceId, resource, mimeType);
 	}
@@ -387,7 +424,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void deleteResource(String dataDivider, String resourceId) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		deleteResourceInFedora(path, resourceId);
 		purgeResourceInFedora(path, resourceId);
 	}

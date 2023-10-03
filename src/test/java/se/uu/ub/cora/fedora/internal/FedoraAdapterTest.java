@@ -33,6 +33,8 @@ import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.FedoraNotFoundException;
+import se.uu.ub.cora.fedora.ResourceMetadata;
+import se.uu.ub.cora.fedora.spy.JsonParserSpy;
 import se.uu.ub.cora.testspies.httphandler.HttpHandlerFactorySpy;
 import se.uu.ub.cora.testspies.httphandler.HttpHandlerSpy;
 import se.uu.ub.cora.testspies.httphandler.InputStreamSpy;
@@ -42,6 +44,7 @@ public class FedoraAdapterTest {
 	private static final String SOME_RESOURCE_ID = "someResourceId:001";
 	private static final String SOME_RECORD_ID = "someRecordId:001";
 	private static final String TOMBSTONE = "/fcr:tombstone";
+	private static final String METADATA = "/fcr:metadata";
 	private static final int CREATED = 201;
 	private static final int OK = 200;
 	private static final int INTERNAL_SERVER_ERROR = 500;
@@ -59,6 +62,7 @@ public class FedoraAdapterTest {
 	private FedoraAdapter fedora;
 	private HttpHandlerSpy httpHandlerSpy0;
 	private HttpHandlerSpy httpHandlerSpy1;
+	private JsonParserSpy jsonParserSpy;
 	private InputStream resource;
 
 	private static final String RECORD = "record";
@@ -66,6 +70,28 @@ public class FedoraAdapterTest {
 	private static final String CREATION = "Creation";
 	private static final String READING = "Reading";
 	private static final String UPDATING = "Updating";
+	private static final String METADATA_LD_JSON = """
+			[
+			   {
+			       "@id": "http://localhost:38087/fcrepo/rest/systemOne/resource/binary:binary:3045607418632979-master",
+			       "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType": [
+			           {
+			               "@value": "application/octet-stream"
+			           }
+			       ],
+			       "http://www.loc.gov/premis/rdf/v1#hasMessageDigest": [
+			           {
+			               "@id": "urn:sha-512:71d0d4ffd68b9ce30008f5e01c54f75d1d9d016aa72b513e70c9321575a6add02e6f89790d2f38dbe4d09b4d6e07a51c9215b425ef381b1b785195d957e65fb0"
+			           }
+			       ],
+			       "http://www.loc.gov/premis/rdf/v1#hasSize": [
+			           {
+			               "@type": "http://www.w3.org/2001/XMLSchema#long",
+			               "@value": "1865987"
+			           }
+			       ]
+			   }
+			   ]""";
 
 	private static final String INTERNAL_ERROR_MESSAGE = "{2} error: an internal "
 			+ "error has been thrown for {1} id {0}.";
@@ -95,8 +121,10 @@ public class FedoraAdapterTest {
 		httpHandlerSpy1 = new HttpHandlerSpy();
 		setDefaultValuesForHttpHandlerFactory();
 		setTombstoneSpecificValuesHttpHandlerFactory();
+		setMetadataSpecificValuesHttpHandlerFactory();
 
-		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
+		jsonParserSpy = new JsonParserSpy();
+		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl, jsonParserSpy);
 		resource = new InputStreamSpy();
 	}
 
@@ -112,6 +140,13 @@ public class FedoraAdapterTest {
 				expectedRecordPath + SOME_RECORD_ID + TOMBSTONE);
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
 				expectedResourcePath + SOME_RESOURCE_ID + TOMBSTONE);
+	}
+
+	private void setMetadataSpecificValuesHttpHandlerFactory() {
+		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
+				expectedRecordPath + SOME_RECORD_ID + METADATA);
+		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
+				expectedResourcePath + SOME_RESOURCE_ID + METADATA);
 	}
 
 	@Test
@@ -384,6 +419,37 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertMethodNotCalled("getResponseText");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseBinary");
 		httpHandlerSpy0.MCR.assertReturn("getResponseBinary", 0, resourceFromFedora);
+	}
+
+	@Test
+	public void testReadResourceMetadataSetupHttpCall() {
+		httpHandlerSpy0.MRV.setReturnValues("getResponseCode", List.of(OK));
+
+		ResourceMetadata readResourceMetadata = fedora.readResourceMetadata(dataDivider,
+				SOME_RESOURCE_ID);
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0,
+				expectedResourcePath + SOME_RESOURCE_ID + METADATA);
+		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "GET");
+		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Accept",
+				"application/ld+json");
+
+	}
+
+	@Test
+	public void testReadResourceMetadataParseJson() {
+		httpHandlerSpy1.MRV.setReturnValues("getResponseCode", List.of(OK));
+
+		ResourceMetadata readResourceMetadata = fedora.readResourceMetadata(dataDivider,
+				SOME_RESOURCE_ID);
+
+		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
+		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseText");
+		var jsonString = httpHandlerSpy1.MCR.getReturnValue("getResponseText", 0);
+
+		jsonParserSpy.MCR.assertMethodWasCalled("parseStringAsObject");
+		jsonParserSpy.MCR.assertParameters("parseStringAsObject", 0, jsonString);
+
 	}
 
 	@Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Uppsala University Library
+ * Copyright 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,13 +16,26 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.spy;
 
-/**
- * ResourceMetadata contains metadata about a resource in the archive.
- * <p>
- * The metadata that is handled is fileSize and checksumSHA512
- */
-public record ResourceMetadata(String fileSize, String checksumSHA512) {
+import se.uu.ub.cora.json.parser.JsonValue;
+import se.uu.ub.cora.json.parser.JsonValueType;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
+
+public class JsonValueSpy implements JsonValue {
+
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodReturnValues MRV = new MethodReturnValues();
+
+	public JsonValueSpy() {
+		MCR.useMRV(MRV);
+		MRV.setDefaultReturnValuesSupplier("getValueType", () -> JsonValueType.FALSE);
+	}
+
+	@Override
+	public JsonValueType getValueType() {
+		return (JsonValueType) MCR.addCallAndReturnFromMRV();
+	}
 
 }
