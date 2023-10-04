@@ -104,6 +104,29 @@ public interface FedoraAdapter {
 	InputStream readResource(String dataDivider, String resourceId);
 
 	/**
+	 * Reads resource from fedora using recorid as identifier.
+	 * <p>
+	 * If the resource with the specified resourceId is not found in fedora a
+	 * {@link FedoraNotFoundException} will be thrown. *
+	 * <p>
+	 * If there are problems while reading the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param dataDivider
+	 *            it is the name of the data divider where the record belongs
+	 * @param resourceId
+	 *            It is the identifier of the resource to be read.
+	 *
+	 * @return InputStrem Representation of the resource read from Fedora
+	 */
+	ResourceMetadata readResourceMetadata(String dataDivider, String resourceId);
+
+	// void updateresourceMimeType(String dataDivider, String resourceId, String mimeType);
+	// OR?
+	// void updateResourceMetadata(String dataDivider, String resourceId,
+	// ResourceMetadata resourceMetadata);
+
+	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of
 	 * the record in Fedora.
 	 * <p>

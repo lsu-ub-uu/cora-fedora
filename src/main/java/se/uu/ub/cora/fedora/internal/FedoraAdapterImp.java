@@ -27,6 +27,7 @@ import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.FedoraNotFoundException;
+import se.uu.ub.cora.fedora.ResourceMetadata;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
@@ -41,40 +42,44 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	private static final String CONTENT_TYPE = "Content-Type";
 	private static final String TOMBSTONE = "/fcr:tombstone";
+	private static final String METADATA = "/fcr:metadata";
 	private static final String RECORD = "record";
 	private static final String RESOURCE = "resource";
 	private static final String RESPONSE_CODE = "responseCode";
-	private static final String RESPONSE_BINARY = "responseBinary";
+	private static final String RESPONSE_BODY = "responseBody";
 	private static final String RECORD_FOLDER = RECORD + "/";
 	private static final String RESOURCE_FOLDER = RESOURCE + "/";
 	private static final String CREATION = "Creation";
 	private static final String UPDATING = "Updating";
 
-	private static final String INTERNAL_ERROR_MESSAGE = "{2} error: an internal "
+	private static final String ERR_MSG_INTERNAL_ERROR = "{2} error: an internal "
 			+ "error has been thrown for {1} id {0}.";
-	private static final String CREATE_CONFLICT_MESSAGE = "Creation error: {1} with id {0} "
+	private static final String ERR_MSG_CREATE_CONFLICT = "Creation error: {1} with id {0} "
 			+ "already exists in Fedora.";
-	private static final String CREATE_ERROR_MESSAGE = "Creation error: {2} id {0} could not be "
+	private static final String ERR_MSG_CREATE_ERROR = "Creation error: {2} id {0} could not be "
 			+ "created due to error {1} returned from Fedora";
-	private static final String READ_NOT_FOUND_MESSAGE = "Reading error: The {1} "
+	private static final String ERR_MSG_READ_NOT_FOUND = "Reading error: The {1} "
 			+ "could not be read from Fedora. No {1} was found with the id {0}";
-	private static final String READ_ERROR_MESSAGE = "Reading error: {2} id {0} could not be read"
+	private static final String ERR_MSG_READ_ERROR = "Reading error: {2} id {0} could not be read"
 			+ " due to error {1} returned from Fedora";
-	private static final String UPDATE_NOT_FOUND_MESSAGE = "Updating error: The {1} "
+	private static final String ERR_MSG_UPDATE_NOT_FOUND = "Updating error: The {1} "
 			+ "could not be updated in Fedora. No {1} was found with the id {0}";
-	private static final String UPDATE_ERROR_MESSAGE = "Updating error: {2} id {0} could not be "
+	private static final String ERR_MSG_UPDATE_ERROR = "Updating error: {2} id {0} could not be "
 			+ "updated due to error {1} returned from Fedora";
-	private static final String DELETE_NOT_FOUND_MESSAGE = "Deletion Error: The resource "
+	private static final String ERR_MSG_DELETE_NOT_FOUND = "Deletion Error: The resource "
 			+ "could not be removed from Fedora. No resource was found with the id {0}";
-	private static final String DELETE_ERROR_MESSAGE = "Deletion Error: {2} id {0} could not be "
+	private static final String ERR_MSG_ERROR = "Deletion Error: {2} id {0} could not be "
 			+ "deleted due to error {1} returned from Fedora";
 
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
+	private ResourceMetadataParser resourceMetadataParser;
 
-	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl) {
+	public FedoraAdapterImp(HttpHandlerFactory httpHandlerFactory, String baseUrl,
+			ResourceMetadataParser resourceMetadataParser) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.baseUrl = baseUrl;
+		this.resourceMetadataParser = resourceMetadataParser;
 	}
 
 	@Override
@@ -93,10 +98,10 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			String typeOfRecord) {
 		if (responseCode == OK) {
 			throw FedoraConflictException.withMessage(
-					MessageFormat.format(CREATE_CONFLICT_MESSAGE, recordId, typeOfRecord));
+					MessageFormat.format(ERR_MSG_CREATE_CONFLICT, recordId, typeOfRecord));
 		}
 		if (responseCode != NOT_FOUND) {
-			throw FedoraException.withMessage(MessageFormat.format(CREATE_ERROR_MESSAGE, recordId,
+			throw FedoraException.withMessage(MessageFormat.format(ERR_MSG_CREATE_ERROR, recordId,
 					responseCode, typeOfRecord));
 		}
 	}
@@ -121,7 +126,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		return baseUrl + dataDivider + "/" + RECORD_FOLDER + recordId;
 	}
 
-	private String ensemblePathForResource(String dataDivider, String recordId) {
+	private String assemblePathForResource(String dataDivider, String recordId) {
 		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId;
 	}
 
@@ -141,14 +146,14 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private FedoraException createFedoraException(String id, Exception e, String typeOfRecord,
 			String typeOfError) {
-		String formatErrorMessage = MessageFormat.format(INTERNAL_ERROR_MESSAGE, id, typeOfRecord,
+		String formatErrorMessage = MessageFormat.format(ERR_MSG_INTERNAL_ERROR, id, typeOfRecord,
 				typeOfError);
 		return FedoraException.withMessageAndException(formatErrorMessage, e);
 	}
 
 	private void throwErrorIfCreateNotOk(int responseCode, String recordId, String typeOfRecord) {
 		if (responseCode != CREATED) {
-			throw FedoraException.withMessage(MessageFormat.format(CREATE_ERROR_MESSAGE, recordId,
+			throw FedoraException.withMessage(MessageFormat.format(ERR_MSG_CREATE_ERROR, recordId,
 					responseCode, typeOfRecord));
 		}
 	}
@@ -164,7 +169,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public void createResource(String dataDivider, String resourceId, InputStream resource,
 			String contentType) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		ensureResourceNotExists(path, resourceId);
 		int responseCode = callFedoraToStoreResource(path, resourceId, resource, contentType);
 		throwErrorIfCreateNotOk(responseCode, resourceId, RESOURCE);
@@ -221,11 +226,11 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private void throwErrorIfNotOk(int responseCode, String recordId, String typeOfrecord) {
 		if (responseCode == NOT_FOUND) {
 			throw FedoraNotFoundException.withMessage(
-					MessageFormat.format(READ_NOT_FOUND_MESSAGE, recordId, typeOfrecord));
+					MessageFormat.format(ERR_MSG_READ_NOT_FOUND, recordId, typeOfrecord));
 		}
 		if (responseCode != OK) {
 			throw FedoraException.withMessage(
-					MessageFormat.format(READ_ERROR_MESSAGE, recordId, responseCode, typeOfrecord));
+					MessageFormat.format(ERR_MSG_READ_ERROR, recordId, responseCode, typeOfrecord));
 		}
 	}
 
@@ -243,11 +248,11 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public InputStream readResource(String dataDivider, String resourceId) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		Map<String, Object> response = callFedoraReadResource(path, resourceId);
 		int responseCode = (int) response.get(RESPONSE_CODE);
 		throwErrorIfReadResourceNotOk(responseCode, resourceId);
-		return (InputStream) response.get(RESPONSE_BINARY);
+		return (InputStream) response.get(RESPONSE_BODY);
 	}
 
 	private Map<String, Object> callFedoraReadResource(String path, String recordId) {
@@ -262,7 +267,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private Map<String, Object> createResponseForResource(HttpHandler httpHandler) {
 		Map<String, Object> response = new HashMap<>();
 		response.put(RESPONSE_CODE, httpHandler.getResponseCode());
-		response.put(RESPONSE_BINARY, httpHandler.getResponseBinary());
+		response.put(RESPONSE_BODY, httpHandler.getResponseBinary());
 		return response;
 	}
 
@@ -270,12 +275,39 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		throwErrorIfNotOk(responseCode, recordId, RESOURCE);
 	}
 
-	public String onlyForTestGetBaseUrl() {
-		return baseUrl;
+	@Override
+	public ResourceMetadata readResourceMetadata(String dataDivider, String resourceId) {
+		String path = assemblePathForResourceMetadata(dataDivider, resourceId);
+		Map<String, Object> response = callFedoraReadResourceMetadata(path, resourceId);
+		int responseCode = (int) response.get(RESPONSE_CODE);
+		throwErrorIfReadResourceNotOk(responseCode, resourceId);
+		return (ResourceMetadata) response.get(RESPONSE_BODY);
 	}
 
-	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
-		return httpHandlerFactory;
+	private String assemblePathForResourceMetadata(String dataDivider, String recordId) {
+		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId + METADATA;
+	}
+
+	private Map<String, Object> callFedoraReadResourceMetadata(String path, String resourceId) {
+		try {
+			HttpHandler httpHandler = setUpHttpHandlerForReadResourceMetadata(path);
+			String jsonString = httpHandler.getResponseText();
+			ResourceMetadata resourceMetadata = resourceMetadataParser.parse(jsonString);
+
+			HashMap<String, Object> response = new HashMap<>();
+			int responseCode = httpHandler.getResponseCode();
+			response.put(RESPONSE_CODE, responseCode);
+			response.put(RESPONSE_BODY, resourceMetadata);
+			return response;
+		} catch (Exception e) {
+			throw createFedoraException(resourceId, e, RESOURCE, "Reading");
+		}
+	}
+
+	private HttpHandler setUpHttpHandlerForReadResourceMetadata(String path) {
+		HttpHandler httpHandler = factorHttpHandler(path, "GET");
+		httpHandler.setRequestProperty("Accept", "application/ld+json");
+		return httpHandler;
 	}
 
 	@Override
@@ -308,17 +340,17 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			String typeOfRecord) {
 		if (responseCode == NOT_FOUND) {
 			throw FedoraNotFoundException.withMessage(
-					MessageFormat.format(UPDATE_NOT_FOUND_MESSAGE, recordId, typeOfRecord));
+					MessageFormat.format(ERR_MSG_UPDATE_NOT_FOUND, recordId, typeOfRecord));
 		}
 		if (responseCode != OK) {
-			throw FedoraException.withMessage(MessageFormat.format(UPDATE_ERROR_MESSAGE, recordId,
+			throw FedoraException.withMessage(MessageFormat.format(ERR_MSG_UPDATE_ERROR, recordId,
 					responseCode, typeOfRecord));
 		}
 	}
 
 	private void throwErrorIfUpdateFailed(int responseCode, String recordId, String typeOfRecord) {
 		if (responseCode != NO_CONTENT) {
-			throw FedoraException.withMessage(MessageFormat.format(UPDATE_ERROR_MESSAGE, recordId,
+			throw FedoraException.withMessage(MessageFormat.format(ERR_MSG_UPDATE_ERROR, recordId,
 					responseCode, typeOfRecord));
 		}
 	}
@@ -326,7 +358,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public void updateResource(String dataDivider, String resourceId, InputStream resource,
 			String mimeType) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		ensureResourceExistsForUpdate(path, resourceId);
 		updateResourceInFedora(path, resourceId, resource, mimeType);
 	}
@@ -377,17 +409,17 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			String typeOfRecord) {
 		if (responseCode == NOT_FOUND) {
 			throw FedoraNotFoundException.withMessage(
-					MessageFormat.format(DELETE_NOT_FOUND_MESSAGE, resourceId, typeOfRecord));
+					MessageFormat.format(ERR_MSG_DELETE_NOT_FOUND, resourceId, typeOfRecord));
 		}
 		if (responseCode != NO_CONTENT) {
-			throw FedoraException.withMessage(MessageFormat.format(DELETE_ERROR_MESSAGE, resourceId,
-					responseCode, typeOfRecord));
+			throw FedoraException.withMessage(
+					MessageFormat.format(ERR_MSG_ERROR, resourceId, responseCode, typeOfRecord));
 		}
 	}
 
 	@Override
 	public void deleteResource(String dataDivider, String resourceId) {
-		String path = ensemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForResource(dataDivider, resourceId);
 		deleteResourceInFedora(path, resourceId);
 		purgeResourceInFedora(path, resourceId);
 	}
@@ -398,5 +430,17 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private void purgeResourceInFedora(String path, String id) {
 		callFedoraForDelete(path + TOMBSTONE, id, RESOURCE);
+	}
+
+	public String onlyForTestGetBaseUrl() {
+		return baseUrl;
+	}
+
+	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
+		return httpHandlerFactory;
+	}
+
+	public ResourceMetadataParser onlyForTestGetResourceMetadataParser() {
+		return resourceMetadataParser;
 	}
 }

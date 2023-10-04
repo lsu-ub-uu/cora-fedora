@@ -4,6 +4,7 @@
  */
 module se.uu.ub.cora.fedora {
 	requires se.uu.ub.cora.httphandler;
+	requires se.uu.ub.cora.json;
 
 	exports se.uu.ub.cora.fedora;
 }
