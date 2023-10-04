@@ -16,19 +16,19 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.internal;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 
-public class FedoraNotFoundExceptionTest {
-
+public class ResourceMetadataParserExceptionTest {
 	@Test
 	public void testInit() {
 		String message = "message";
-		FedoraNotFoundException exception = FedoraNotFoundException.withMessage(message);
+		ResourceMetadataParserException exception = ResourceMetadataParserException
+				.withMessage(message);
 		assertEquals(exception.getMessage(), "message");
 		assertTrue(exception instanceof RuntimeException);
 	}
@@ -37,7 +37,7 @@ public class FedoraNotFoundExceptionTest {
 	public void testMessageAndError() throws Exception {
 		String message = "message";
 		Exception exception = new RuntimeException();
-		FedoraNotFoundException storageException = FedoraNotFoundException
+		ResourceMetadataParserException storageException = ResourceMetadataParserException
 				.withMessageAndException(message, exception);
 		assertEquals(storageException.getMessage(), "message");
 		assertEquals(storageException.getCause(), exception);

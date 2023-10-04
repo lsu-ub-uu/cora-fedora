@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
+import se.uu.ub.cora.json.parser.org.OrgJsonParser;
 
 public class RealFedoraTest {
 
@@ -44,9 +45,11 @@ public class RealFedoraTest {
 	@BeforeMethod
 	public void setUp() {
 		baseUrl = "http://systemone-fedora:8080/fcrepo/rest/";
-		// httpHandlerFactory = new HttpHandlerFactorySpy();
 		httpHandlerFactory = new HttpHandlerFactoryImp();
-		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl);
+		OrgJsonParser orgJsonParser = new OrgJsonParser();
+		ResourceMetadataParserImp resourceMetadataParser = ResourceMetadataParserImp
+				.usingJsonParser(orgJsonParser);
+		fedora = new FedoraAdapterImp(httpHandlerFactory, baseUrl, resourceMetadataParser);
 	}
 
 	@Test(enabled = false)

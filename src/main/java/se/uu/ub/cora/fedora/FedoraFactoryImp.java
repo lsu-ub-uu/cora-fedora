@@ -20,7 +20,10 @@
 package se.uu.ub.cora.fedora;
 
 import se.uu.ub.cora.fedora.internal.FedoraAdapterImp;
+import se.uu.ub.cora.fedora.internal.ResourceMetadataParser;
+import se.uu.ub.cora.fedora.internal.ResourceMetadataParserImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
+import se.uu.ub.cora.json.parser.org.OrgJsonParser;
 
 public class FedoraFactoryImp implements FedoraFactory {
 
@@ -34,7 +37,9 @@ public class FedoraFactoryImp implements FedoraFactory {
 
 	@Override
 	public FedoraAdapter factorFedoraAdapter() {
-		return new FedoraAdapterImp(httpHandlerFactory, fedoraUrl);
+		OrgJsonParser orgJsonParser = new OrgJsonParser();
+		ResourceMetadataParser parser = ResourceMetadataParserImp.usingJsonParser(orgJsonParser);
+		return new FedoraAdapterImp(httpHandlerFactory, fedoraUrl, parser);
 	}
 
 	public String onlyForTestGetBaseUrl() {
