@@ -27,22 +27,31 @@ import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.FedoraNotFoundException;
-import se.uu.ub.cora.fedora.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadataToUpdate;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraAdapterImp implements FedoraAdapter {
+
+	private static final String DELETE = "DELETE";
+	private static final String GET = "GET";
+	private static final String PUT = "PUT";
+	private static final String HEAD = "HEAD";
+	private static final String PATCH = "PATCH";
 
 	private static final int OK = 200;
 	private static final int CREATED = 201;
 	private static final int NO_CONTENT = 204;
 	private static final int NOT_FOUND = 404;
 
+	private static final String ACCEPT = "Accept";
+	private static final String CONTENT_TYPE = "Content-Type";
+
 	private static final String MIME_TYPE_TEXT_PLAIN_UTF_8 = "text/plain;charset=utf-8";
 	private static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
-	private static final String CONTENT_TYPE = "Content-Type";
-	private static final String TOMBSTONE = "/fcr:tombstone";
-	private static final String METADATA = "/fcr:metadata";
+	private static final String FCR_TOMBSTONE = "/fcr:tombstone";
+	private static final String FCR_METADATA = "/fcr:metadata";
 	private static final String RECORD = "record";
 	private static final String RESOURCE = "resource";
 	private static final String RESPONSE_CODE = "responseCode";
@@ -64,12 +73,20 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			+ " due to error {1} returned from Fedora";
 	private static final String ERR_MSG_UPDATE_NOT_FOUND = "Updating error: The {1} "
 			+ "could not be updated in Fedora. No {1} was found with the id {0}";
+	private static final String ERR_MSG_UPDATE_METADATA_NOT_FOUND = "Updating metadatad error: The {1} "
+			+ "could not be updated with new metadata in Fedora. No {1} was found with the id {0}";
 	private static final String ERR_MSG_UPDATE_ERROR = "Updating error: {2} id {0} could not be "
 			+ "updated due to error {1} returned from Fedora";
 	private static final String ERR_MSG_DELETE_NOT_FOUND = "Deletion Error: The resource "
 			+ "could not be removed from Fedora. No resource was found with the id {0}";
 	private static final String ERR_MSG_ERROR = "Deletion Error: {2} id {0} could not be "
 			+ "deleted due to error {1} returned from Fedora";
+
+	private static final String UPDTAE_RESPORCE_METADATA_BODY = """
+			PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
+			INSERT '{<> ebucore:filename \"{0}\" . <> ebucore:hasMimeType \"{1}\" .'}
+			WHERE '{'}
+			""";
 
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
@@ -109,7 +126,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private int readObjectFromFedora(String path, String recordId, String typeOfRecord,
 			String typeOfAction) {
 		try {
-			HttpHandler httpHandlerHead = factorHttpHandler(path, "HEAD");
+			HttpHandler httpHandlerHead = factorHttpHandler(path, HEAD);
 			return httpHandlerHead.getResponseCode();
 		} catch (Exception e) {
 			throw createFedoraException(recordId, e, typeOfRecord, typeOfAction);
@@ -160,7 +177,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private HttpHandler setupHttpHandlerForStoreRecord(String path, String fedoraXML) {
 
-		HttpHandler httpHandler = factorHttpHandler(path, "PUT");
+		HttpHandler httpHandler = factorHttpHandler(path, PUT);
 		httpHandler.setRequestProperty(CONTENT_TYPE, MIME_TYPE_TEXT_PLAIN_UTF_8);
 		httpHandler.setOutput(fedoraXML);
 		return httpHandler;
@@ -192,7 +209,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private HttpHandler setupHttpHandlerForStoreResource(String path, InputStream resource,
 			String mimeType) {
-		HttpHandler httpHandler = factorHttpHandler(path, "PUT");
+		HttpHandler httpHandler = factorHttpHandler(path, PUT);
 		httpHandler.setRequestProperty(CONTENT_TYPE, mimeType);
 		httpHandler.setStreamOutput(resource);
 		return httpHandler;
@@ -235,14 +252,14 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private HttpHandler setUpHttpHandlerForRead(String path) {
-		HttpHandler httpHandler = factorHttpHandler(path, "GET");
-		httpHandler.setRequestProperty("Accept", MIME_TYPE_TEXT_PLAIN_UTF_8);
+		HttpHandler httpHandler = factorHttpHandler(path, GET);
+		httpHandler.setRequestProperty(ACCEPT, MIME_TYPE_TEXT_PLAIN_UTF_8);
 		return httpHandler;
 	}
 
 	private HttpHandler setUpHttpHandlerForReadResource(String path) {
-		HttpHandler httpHandler = factorHttpHandler(path, "GET");
-		httpHandler.setRequestProperty("Accept", MIME_TYPE_OCTET_STREAM);
+		HttpHandler httpHandler = factorHttpHandler(path, GET);
+		httpHandler.setRequestProperty(ACCEPT, MIME_TYPE_OCTET_STREAM);
 		return httpHandler;
 	}
 
@@ -285,7 +302,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private String assemblePathForResourceMetadata(String dataDivider, String recordId) {
-		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId + METADATA;
+		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId + FCR_METADATA;
 	}
 
 	private Map<String, Object> callFedoraReadResourceMetadata(String path, String resourceId) {
@@ -305,8 +322,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private HttpHandler setUpHttpHandlerForReadResourceMetadata(String path) {
-		HttpHandler httpHandler = factorHttpHandler(path, "GET");
-		httpHandler.setRequestProperty("Accept", "application/ld+json");
+		HttpHandler httpHandler = factorHttpHandler(path, GET);
+		httpHandler.setRequestProperty(ACCEPT, "application/ld+json");
 		return httpHandler;
 	}
 
@@ -356,6 +373,38 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	@Override
+	public void updateResourceMetadata(String dataDivider, String resourceId,
+			ResourceMetadataToUpdate resourceMetadataToUpdate) {
+
+		String path = assemblePathForResourceMetadata(dataDivider, resourceId);
+		HttpHandler httpHandler = factorHttpHandler(path, PATCH);
+		httpHandler.setRequestProperty(CONTENT_TYPE, "application/sparql-update");
+		String body = createBodyForUpdateResourceMetadata(resourceMetadataToUpdate);
+		httpHandler.setOutput(body);
+		int responseCode = httpHandler.getResponseCode();
+		throwExceptionForUpdateResourceMetadataIfNotOk(responseCode, resourceId);
+
+	}
+
+	private String createBodyForUpdateResourceMetadata(
+			ResourceMetadataToUpdate resourceMetadataToUpdate) {
+		return MessageFormat.format(UPDTAE_RESPORCE_METADATA_BODY,
+				resourceMetadataToUpdate.originalFileName(), resourceMetadataToUpdate.mimeType());
+	}
+
+	private void throwExceptionForUpdateResourceMetadataIfNotOk(int responseCode,
+			String resourceId) {
+		if (responseCode == NOT_FOUND) {
+			throw FedoraNotFoundException.withMessage(
+					MessageFormat.format(ERR_MSG_UPDATE_METADATA_NOT_FOUND, resourceId, RESOURCE));
+		}
+		// if (responseCode != NO_CONTENT) {
+		// throw FedoraException.withMessage(
+		// MessageFormat.format(ERR_MSG_ERROR, resourceId, responseCode, typeOfRecord));
+		// }
+	}
+
+	@Override
 	public void updateResource(String dataDivider, String resourceId, InputStream resource,
 			String mimeType) {
 		String path = assemblePathForResource(dataDivider, resourceId);
@@ -396,11 +445,11 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private void purgeRecordInFedora(String path, String id) {
-		callFedoraForDelete(path + TOMBSTONE, id, RECORD);
+		callFedoraForDelete(path + FCR_TOMBSTONE, id, RECORD);
 	}
 
 	private void callFedoraForDelete(String path, String id, String typeOfRecord) {
-		HttpHandler httpHandler = factorHttpHandler(path, "DELETE");
+		HttpHandler httpHandler = factorHttpHandler(path, DELETE);
 		int responseCode = httpHandler.getResponseCode();
 		throwExceptionIfDeleteNotOk(responseCode, id, typeOfRecord);
 	}
@@ -429,7 +478,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private void purgeResourceInFedora(String path, String id) {
-		callFedoraForDelete(path + TOMBSTONE, id, RESOURCE);
+		callFedoraForDelete(path + FCR_TOMBSTONE, id, RESOURCE);
 	}
 
 	public String onlyForTestGetBaseUrl() {
@@ -443,4 +492,5 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	public ResourceMetadataParser onlyForTestGetResourceMetadataParser() {
 		return resourceMetadataParser;
 	}
+
 }

@@ -16,12 +16,24 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora.record;
 
-import se.uu.ub.cora.fedora.record.ResourceMetadata;
+import static org.testng.Assert.assertEquals;
 
-public interface ResourceMetadataParser {
+import org.testng.annotations.Test;
 
-	ResourceMetadata parse(String jsonString);
+public class ResourceMetadataToUpdateTest {
+
+	private String originalFileName = "someFileName";
+	private String mimeType = "someMimeType";
+
+	@Test
+	public void testResourceMetadata() throws Exception {
+		ResourceMetadataToUpdate resourceMetadata = new ResourceMetadataToUpdate(originalFileName,
+				mimeType);
+
+		assertEquals(resourceMetadata.originalFileName(), originalFileName);
+		assertEquals(resourceMetadata.mimeType(), mimeType);
+	}
 
 }

@@ -34,7 +34,8 @@ import se.uu.ub.cora.fedora.FedoraAdapter;
 import se.uu.ub.cora.fedora.FedoraConflictException;
 import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.FedoraNotFoundException;
-import se.uu.ub.cora.fedora.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadataToUpdate;
 import se.uu.ub.cora.fedora.spy.ResourceMetadataParserSpy;
 import se.uu.ub.cora.testspies.httphandler.HttpHandlerFactorySpy;
 import se.uu.ub.cora.testspies.httphandler.HttpHandlerSpy;
@@ -44,8 +45,8 @@ public class FedoraAdapterTest {
 
 	private static final String SOME_RESOURCE_ID = "someResourceId:001";
 	private static final String SOME_RECORD_ID = "someRecordId:001";
-	private static final String TOMBSTONE = "/fcr:tombstone";
-	private static final String METADATA = "/fcr:metadata";
+	private static final String FCR_TOMBSTONE = "/fcr:tombstone";
+	private static final String FCR_METADATA = "/fcr:metadata";
 	private static final int CREATED = 201;
 	private static final int OK = 200;
 	private static final int INTERNAL_SERVER_ERROR = 500;
@@ -65,6 +66,8 @@ public class FedoraAdapterTest {
 	private HttpHandlerSpy httpHandlerSpy1;
 	private ResourceMetadataParserSpy resourceMetadataParser;
 	private InputStreamSpy resource;
+	ResourceMetadataToUpdate metadataResourceToUpdate = new ResourceMetadataToUpdate(
+			"someOriginalFileName", "someMimeType");
 
 	private static final String RECORD = "record";
 	private static final String RESOURCE = "resource";
@@ -84,12 +87,19 @@ public class FedoraAdapterTest {
 			+ " due to error {1} returned from Fedora";
 	private static final String ERR_MSG_UPDATE_NOT_FOUND = "Updating error: The {1} "
 			+ "could not be updated in Fedora. No {1} was found with the id {0}";
+	private static final String ERR_MSG_UPDATE_METADATA_NOT_FOUND = "Updating metadatad error: The {1} "
+			+ "could not be updated with new metadata in Fedora. No {1} was found with the id {0}";
 	private static final String ERR_MSG_UPDATE_ERROR = "Updating error: {2} id {0} could not be "
 			+ "updated due to error {1} returned from Fedora";
 	private static final String ERR_MSG_DELETE_NOT_FOUND = "Deletion Error: The resource "
 			+ "could not be removed from Fedora. No resource was found with the id {0}";
 	private static final String ERR_MSG_ERROR = "Deletion Error: {2} id {0} could not be "
 			+ "deleted due to error {1} returned from Fedora";
+	private static final String UPDTAE_RESPORCE_METADATA_BODY = """
+			PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
+			INSERT '{<> ebucore:filename \"{0}\" . <> ebucore:hasMimeType \"{1}\" .'}
+			WHERE '{'}
+			""";
 
 	@BeforeMethod
 	public void setUp() {
@@ -115,16 +125,16 @@ public class FedoraAdapterTest {
 
 	private void setTombstoneSpecificValuesHttpHandlerFactory() {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedRecordPath + SOME_RECORD_ID + TOMBSTONE);
+				expectedRecordPath + SOME_RECORD_ID + FCR_TOMBSTONE);
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedResourcePath + SOME_RESOURCE_ID + TOMBSTONE);
+				expectedResourcePath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
 	}
 
 	private void setMetadataSpecificValuesHttpHandlerFactory() {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedRecordPath + SOME_RECORD_ID + METADATA);
+				expectedRecordPath + SOME_RECORD_ID + FCR_METADATA);
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedResourcePath + SOME_RESOURCE_ID + METADATA);
+				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
 	}
 
 	@Test
@@ -414,7 +424,7 @@ public class FedoraAdapterTest {
 		fedora.readResourceMetadata(dataDivider, SOME_RESOURCE_ID);
 
 		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID + METADATA);
+				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "GET");
 		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Accept",
 				"application/ld+json");
@@ -750,7 +760,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testDeleteRecordOk() throws Exception {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedRecordPath + SOME_RECORD_ID + TOMBSTONE);
+				expectedRecordPath + SOME_RECORD_ID + FCR_TOMBSTONE);
 
 		httpHandlerSpy0.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
 		httpHandlerSpy1.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
@@ -763,7 +773,7 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
 		httpHandlerFactory.MCR.assertParameters("factor", 1,
-				expectedRecordPath + SOME_RECORD_ID + TOMBSTONE);
+				expectedRecordPath + SOME_RECORD_ID + FCR_TOMBSTONE);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "DELETE");
 		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy1.MCR.assertReturn("getResponseCode", 0, NO_CONTENT);
@@ -814,7 +824,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testDeleteResourceOk() throws Exception {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedResourcePath + SOME_RESOURCE_ID + TOMBSTONE);
+				expectedResourcePath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
 
 		httpHandlerSpy0.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
 		httpHandlerSpy1.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
@@ -829,7 +839,7 @@ public class FedoraAdapterTest {
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
 		httpHandlerFactory.MCR.assertParameters("factor", 1,
-				expectedResourcePath + SOME_RESOURCE_ID + TOMBSTONE);
+				expectedResourcePath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "DELETE");
 		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy1.MCR.assertReturn("getResponseCode", 0, NO_CONTENT);
@@ -877,4 +887,38 @@ public class FedoraAdapterTest {
 		}
 	}
 
+	@Test
+	public void testUpdateResourceMetadata() throws Exception {
+		httpHandlerSpy1.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> 204);
+
+		fedora.updateResourceMetadata(dataDivider, SOME_RESOURCE_ID, metadataResourceToUpdate);
+
+		httpHandlerFactory.MCR.assertParameters("factor", 0,
+				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
+		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "PATCH");
+		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
+				"application/sparql-update");
+
+		String body = MessageFormat.format(UPDTAE_RESPORCE_METADATA_BODY,
+				metadataResourceToUpdate.originalFileName(), metadataResourceToUpdate.mimeType());
+		httpHandlerSpy1.MCR.assertParameters("setOutput", 0, body);
+		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
+		httpHandlerSpy1.MCR.assertReturn("getResponseCode", 0, 204);
+	}
+
+	@Test
+	public void testUpdateResourceMetadataNotFound() throws Exception {
+		httpHandlerSpy1.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> 404);
+
+		try {
+			fedora.updateResourceMetadata(dataDivider, SOME_RESOURCE_ID, metadataResourceToUpdate);
+			fail();
+		} catch (Exception e) {
+			// TODO: handle exception
+			assertTrue(e instanceof FedoraNotFoundException);
+			assertEquals(e.getMessage(), MessageFormat.format(ERR_MSG_UPDATE_METADATA_NOT_FOUND,
+					SOME_RESOURCE_ID, RESOURCE));
+		}
+
+	}
 }

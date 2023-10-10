@@ -16,12 +16,23 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora.record;
 
-import se.uu.ub.cora.fedora.record.ResourceMetadata;
+import static org.testng.Assert.assertEquals;
 
-public interface ResourceMetadataParser {
+import org.testng.annotations.Test;
 
-	ResourceMetadata parse(String jsonString);
+public class ResourceMetadataTest {
+
+	private String fileSize = "someFileSize";
+	private String checksumSHA512 = "someChecksum";
+
+	@Test
+	public void testResourceMetadata() throws Exception {
+		ResourceMetadata resourceMetadata = new ResourceMetadata(fileSize, checksumSHA512);
+
+		assertEquals(resourceMetadata.fileSize(), fileSize);
+		assertEquals(resourceMetadata.checksumSHA512(), checksumSHA512);
+	}
 
 }

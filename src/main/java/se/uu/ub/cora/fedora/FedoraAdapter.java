@@ -20,6 +20,9 @@ package se.uu.ub.cora.fedora;
 
 import java.io.InputStream;
 
+import se.uu.ub.cora.fedora.record.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadataToUpdate;
+
 /**
  * FedoraAdapter defines an interface in order to talk to Fedora 6+ hiding the implementation
  * details.
@@ -104,7 +107,7 @@ public interface FedoraAdapter {
 	InputStream readResource(String dataDivider, String resourceId);
 
 	/**
-	 * Reads resource from fedora using recorid as identifier.
+	 * Reads a resource from fedora using resourceId as identifier.
 	 * <p>
 	 * If the resource with the specified resourceId is not found in fedora a
 	 * {@link FedoraNotFoundException} will be thrown. *
@@ -121,10 +124,25 @@ public interface FedoraAdapter {
 	 */
 	ResourceMetadata readResourceMetadata(String dataDivider, String resourceId);
 
-	// void updateresourceMimeType(String dataDivider, String resourceId, String mimeType);
-	// OR?
-	// void updateResourceMetadata(String dataDivider, String resourceId,
-	// ResourceMetadata resourceMetadata);
+	/**
+	 * Updates resource metadata from fedora using resourceId and datadivider. It updates all
+	 * metadata specified in ResourceMetadataToUpdate.
+	 * <p>
+	 * If the resource with the specified resourceId is not found in fedora a
+	 * {@link FedoraNotFoundException} will be thrown. *
+	 * <p>
+	 * If there are problems while reading the record in Fedora a {@link FedoraException} will be
+	 * thrown.
+	 * 
+	 * @param dataDivider
+	 *            It is the name of the data divider where the record belongs
+	 * @param resourceId
+	 *            It is the identifier of the resource to be read.
+	 * @param ResourceMetadataToUpdate
+	 *            A record containing the metadata use to update resource metadata in fedora.
+	 */
+	void updateResourceMetadata(String dataDivider, String resourceId,
+			ResourceMetadataToUpdate resourceMetadataToUpdate);
 
 	/**
 	 * Updates an existing record in Fedora. The payload (recordXml) will create a new version of
