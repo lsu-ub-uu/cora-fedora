@@ -49,7 +49,6 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String CONTENT_TYPE = "Content-Type";
 
 	private static final String MIME_TYPE_TEXT_PLAIN_UTF_8 = "text/plain;charset=utf-8";
-	private static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	private static final String FCR_TOMBSTONE = "/fcr:tombstone";
 	private static final String FCR_METADATA = "/fcr:metadata";
 	private static final String RECORD = "record";
@@ -252,9 +251,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private HttpHandler setUpHttpHandlerForReadResource(String path) {
-		HttpHandler httpHandler = factorHttpHandler(path, GET);
-		httpHandler.setRequestProperty(ACCEPT, MIME_TYPE_OCTET_STREAM);
-		return httpHandler;
+		return factorHttpHandler(path, GET);
 	}
 
 	@Override

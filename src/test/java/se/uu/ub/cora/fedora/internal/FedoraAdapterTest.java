@@ -399,8 +399,6 @@ public class FedoraAdapterTest {
 		httpHandlerFactory.MCR.assertParameters("factor", 0,
 				expectedResourcePath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "GET");
-		httpHandlerSpy0.MCR.assertParameters("setRequestProperty", 0, "Accept",
-				"application/octet-stream");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy0.MCR.assertMethodNotCalled("getResponseText");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseBinary");
