@@ -18,7 +18,7 @@
  */
 package se.uu.ub.cora.fedora.internal;
 
-import se.uu.ub.cora.fedora.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadata;
 import se.uu.ub.cora.json.parser.JsonArray;
 import se.uu.ub.cora.json.parser.JsonObject;
 import se.uu.ub.cora.json.parser.JsonParser;

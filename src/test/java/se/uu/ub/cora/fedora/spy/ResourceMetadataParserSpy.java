@@ -1,7 +1,7 @@
 package se.uu.ub.cora.fedora.spy;
 
-import se.uu.ub.cora.fedora.ResourceMetadata;
 import se.uu.ub.cora.fedora.internal.ResourceMetadataParser;
+import se.uu.ub.cora.fedora.record.ResourceMetadata;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 

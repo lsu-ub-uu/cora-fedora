@@ -16,12 +16,13 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.internal;
+package se.uu.ub.cora.fedora.record;
 
-import se.uu.ub.cora.fedora.record.ResourceMetadata;
-
-public interface ResourceMetadataParser {
-
-	ResourceMetadata parse(String jsonString);
+/**
+ * ResourceMetadata contains metadata about a resource in the archive.
+ * <p>
+ * The metadata that is handled is fileSize and checksumSHA512
+ */
+public record ResourceMetadata(String fileSize, String checksumSHA512) {
 
 }

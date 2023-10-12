@@ -16,13 +16,13 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora;
+package se.uu.ub.cora.fedora.record;
 
 /**
- * ResourceMetadata contains metadata about a resource in the archive.
+ * ResourceMetadataToUpdate contains metadata used to update a resource in fedora.
  * <p>
- * The metadata that is handled is fileSize and checksumSHA512
+ * The metadata that is handled is originalFileName and mimeType
  */
-public record ResourceMetadata(String fileSize, String checksumSHA512) {
+public record ResourceMetadataToUpdate(String originalFileName, String mimeType) {
 
 }

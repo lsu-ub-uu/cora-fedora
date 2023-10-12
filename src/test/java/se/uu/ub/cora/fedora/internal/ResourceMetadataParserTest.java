@@ -24,7 +24,7 @@ import static org.testng.Assert.assertNotNull;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.fedora.ResourceMetadata;
+import se.uu.ub.cora.fedora.record.ResourceMetadata;
 import se.uu.ub.cora.fedora.spy.JsonArraySpy;
 import se.uu.ub.cora.fedora.spy.JsonObjectSpy;
 import se.uu.ub.cora.fedora.spy.JsonParserSpy;

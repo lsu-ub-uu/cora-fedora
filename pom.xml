@@ -31,7 +31,7 @@
 	<name>Fedora 6+</name>
 
 	<properties>
-		<httphandler.version>2.11.0</httphandler.version>
+		<httphandler.version>2.12.0</httphandler.version>
 		<json.version>3.9.0</json.version>
 		<testutils.version>1.11.0</testutils.version>
 		<testspies.version>1.2.0</testspies.version>
