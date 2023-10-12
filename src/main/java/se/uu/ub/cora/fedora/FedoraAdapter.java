@@ -74,7 +74,6 @@ public interface FedoraAdapter {
 	/**
 	 * Reads a record from fedora using recordId
 	 * <p>
-	 * <p>
 	 * If a record with the specified recordId is not found in fedora a
 	 * {@link FedoraNotFoundException} will be thrown.
 	 * <p>
