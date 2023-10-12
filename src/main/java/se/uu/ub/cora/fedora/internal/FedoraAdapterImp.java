@@ -75,10 +75,10 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String ERR_MSG_NOT_FOUND_IN_FEDORA = "Error {0} in Fedora: {1} id "
 			+ "{2} was not found in Fedora.";
 
-	private static final String UPDTAE_RESPORCE_METADATA_BODY = """
+	private static final String UPDATE_RESPONSE_METADATA_BODY = """
 			PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
-			INSERT '{<> ebucore:filename \"{0}\" . <> ebucore:hasMimeType \"{1}\" .'}
-			WHERE '{'}
+			INSERT '{'<> ebucore:filename "{0}" . <> ebucore:hasMimeType "{1}" .'}'
+			WHERE '{}'
 			""";
 
 	private HttpHandlerFactory httpHandlerFactory;
@@ -413,7 +413,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private String createBodyForUpdateResourceMetadata(
 			ResourceMetadataToUpdate resourceMetadataToUpdate) {
-		return MessageFormat.format(UPDTAE_RESPORCE_METADATA_BODY,
+		return MessageFormat.format(UPDATE_RESPONSE_METADATA_BODY,
 				resourceMetadataToUpdate.originalFileName(), resourceMetadataToUpdate.mimeType());
 	}
 

@@ -88,12 +88,6 @@ public class FedoraAdapterTest {
 	private static final String ERR_MSG_NOT_FOUND_IN_FEDORA = "Error {0} in Fedora: {1} id "
 			+ "{2} was not found in Fedora.";
 
-	private static final String UPDTAE_RESPORCE_METADATA_BODY = """
-			PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
-			INSERT '{<> ebucore:filename \"{0}\" . <> ebucore:hasMimeType \"{1}\" .'}
-			WHERE '{'}
-			""";
-
 	@BeforeMethod
 	public void setUp() {
 		httpHandlerFactory = new HttpHandlerFactorySpy();
@@ -895,8 +889,12 @@ public class FedoraAdapterTest {
 		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
 				"application/sparql-update");
 
-		String body = MessageFormat.format(UPDTAE_RESPORCE_METADATA_BODY,
-				metadataResourceToUpdate.originalFileName(), metadataResourceToUpdate.mimeType());
+		String body = """
+				PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
+				INSERT {<> ebucore:filename "someOriginalFileName" . <> ebucore:hasMimeType "someMimeType" .}
+				WHERE {}
+				""";
+
 		httpHandlerSpy1.MCR.assertParameters("setOutput", 0, body);
 		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy1.MCR.assertReturn("getResponseCode", 0, 204);
