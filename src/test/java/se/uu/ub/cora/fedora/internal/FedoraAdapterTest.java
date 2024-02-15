@@ -37,9 +37,9 @@ import se.uu.ub.cora.fedora.FedoraNotFoundException;
 import se.uu.ub.cora.fedora.record.ResourceMetadata;
 import se.uu.ub.cora.fedora.record.ResourceMetadataToUpdate;
 import se.uu.ub.cora.fedora.spy.ResourceMetadataParserSpy;
-import se.uu.ub.cora.testspies.httphandler.HttpHandlerFactorySpy;
-import se.uu.ub.cora.testspies.httphandler.HttpHandlerSpy;
-import se.uu.ub.cora.testspies.httphandler.InputStreamSpy;
+import se.uu.ub.cora.httphandler.spies.HttpHandlerFactorySpy;
+import se.uu.ub.cora.httphandler.spies.HttpHandlerSpy;
+import se.uu.ub.cora.httphandler.spies.InputStreamSpy;
 
 public class FedoraAdapterTest {
 
