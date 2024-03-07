@@ -82,4 +82,10 @@ public class JsonObjectSpy implements JsonObject {
 		return (String) MCR.addCallAndReturnFromMRV();
 	}
 
+	@Override
+	public void removeKey(String key) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

@@ -31,10 +31,10 @@
 	<name>Fedora 6+</name>
 
 	<properties>
-		<httphandler.version>2.13.0</httphandler.version>
-		<json.version>3.9.0</json.version>
+		<httphandler.version>2.16.0</httphandler.version>
+		<json.version>3.10.0</json.version>
 		<testutils.version>1.11.0</testutils.version>
-		<httphandler-spies.version>1.5.0</httphandler-spies.version>
+		<httphandler-spies.version>1.6.0</httphandler-spies.version>
 	</properties>
 
 	<scm>
