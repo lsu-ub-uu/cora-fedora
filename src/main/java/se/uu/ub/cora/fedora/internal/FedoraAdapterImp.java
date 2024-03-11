@@ -93,6 +93,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void createRecord(String dataDivider, String recordId, String fedoraXML) {
+		System.err.println("FedoraAdapter(createRecord) - recordid: " + recordId);
 		String path = ensemblePathForRecord(dataDivider, recordId);
 		ensureRecordNotExists(path, recordId);
 		createRecordInFedora(path, recordId, fedoraXML);
@@ -146,8 +147,17 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private int callFedoraStoreRecord(String path, String recordId, String fedoraXML) {
 		try {
+			System.err.println("FedoraAdapter (callFedoraStoreRecord) - path: " + path
+					+ ", recordId: " + recordId + ".");
 			HttpHandler httpHandler = setupHttpHandlerForStoreRecord(path, fedoraXML);
-			return httpHandler.getResponseCode();
+			if (httpHandler.getResponseCode() == 201) {
+				return httpHandler.getResponseCode();
+			} else {
+				System.err.println("FedoraAdapter (callFedoraStoreRecord) - ErrorText: "
+						+ httpHandler.getErrorText());
+				return httpHandler.getResponseCode();
+			}
+
 		} catch (Exception e) {
 			throw createFedoraException(recordId, e, RECORD, CREATING);
 		}
@@ -180,6 +190,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 			String contentType) {
 		String path = assemblePathForResource(dataDivider, resourceId);
 		ensureResourceNotExists(path, resourceId);
+
 		int responseCode = callFedoraToStoreResource(path, resourceId, resource, contentType);
 		throwErrorIfCreateNotOk(responseCode, resourceId, RESOURCE);
 	}
@@ -192,6 +203,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private int callFedoraToStoreResource(String path, String resourceId, InputStream resource,
 			String contentType) {
 		try {
+			System.err.println("FedoraAdapter (callFedoraToStoreResource): path");
 			HttpHandler httpHandler = setupHttpHandlerForStoreResource(path, resource, contentType);
 			return httpHandler.getResponseCode();
 		} catch (Exception e) {
