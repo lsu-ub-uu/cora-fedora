@@ -55,8 +55,6 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String RESOURCE = "resource";
 	private static final String RESPONSE_CODE = "responseCode";
 	private static final String RESPONSE_BODY = "responseBody";
-	private static final String RECORD_FOLDER = RECORD + "/";
-	private static final String RESOURCE_FOLDER = RESOURCE + "/";
 
 	private static final String CREATING = "creating";
 	private static final String READING = "reading";
@@ -74,12 +72,6 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	private static final String ERR_MSG_NOT_FOUND_IN_FEDORA = "Error {0} in Fedora: {1} id "
 			+ "{2} was not found in Fedora.";
 
-	private static final String UPDATE_RESPONSE_METADATA_BODY = """
-			PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
-			INSERT '{'<> ebucore:filename "{0}" . <> ebucore:hasMimeType "{1}" .'}'
-			WHERE '{}'
-			""";
-
 	private HttpHandlerFactory httpHandlerFactory;
 	private String baseUrl;
 	private ResourceMetadataParser resourceMetadataParser;
@@ -93,7 +85,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void createRecord(String dataDivider, String recordId, String fedoraXML) {
-		String path = ensemblePathForRecord(dataDivider, recordId);
+		String path = assemblePathForRecord(dataDivider, recordId);
 		ensureRecordNotExists(path, recordId);
 		createRecordInFedora(path, recordId, fedoraXML);
 	}
@@ -131,12 +123,8 @@ public class FedoraAdapterImp implements FedoraAdapter {
 		return httpHandler;
 	}
 
-	private String ensemblePathForRecord(String dataDivider, String recordId) {
-		return baseUrl + dataDivider + "/" + RECORD_FOLDER + recordId;
-	}
-
-	private String assemblePathForResource(String dataDivider, String recordId) {
-		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId;
+	private String assemblePathForRecord(String dataDivider, String recordId) {
+		return baseUrl + dataDivider + ":" + recordId;
 	}
 
 	private void createRecordInFedora(String path, String recordId, String fedoraXML) {
@@ -178,7 +166,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public void createResource(String dataDivider, String resourceId, InputStream resource,
 			String contentType) {
-		String path = assemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForRecord(dataDivider, resourceId);
 		ensureResourceNotExists(path, resourceId);
 		int responseCode = callFedoraToStoreResource(path, resourceId, resource, contentType);
 		throwErrorIfCreateNotOk(responseCode, resourceId, RESOURCE);
@@ -209,7 +197,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public String readRecord(String dataDivider, String recordId) {
-		String path = ensemblePathForRecord(dataDivider, recordId);
+		String path = assemblePathForRecord(dataDivider, recordId);
 		Map<String, Object> response = callFedoraReadRecord(path, recordId);
 		int responseCode = (int) response.get(RESPONSE_CODE);
 		throwErrorIfNotOk(responseCode, recordId, RECORD, READING);
@@ -256,7 +244,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public InputStream readResource(String dataDivider, String resourceId) {
-		String path = assemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForRecord(dataDivider, resourceId);
 		Map<String, Object> response = callFedoraReadResource(path, resourceId);
 		int responseCode = (int) response.get(RESPONSE_CODE);
 		throwErrorIfNotOk(responseCode, resourceId, RESOURCE, READING);
@@ -281,15 +269,15 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public ResourceMetadata readResourceMetadata(String dataDivider, String resourceId) {
-		String path = assemblePathForResourceMetadata(dataDivider, resourceId);
+		String path = assemblePathForRecordMetadata(dataDivider, resourceId);
 		Map<String, Object> response = callFedoraReadResourceMetadata(path, resourceId);
 		int responseCode = (int) response.get(RESPONSE_CODE);
 		throwErrorIfNotOk(responseCode, resourceId, RESOURCE, READING_METADATA);
 		return (ResourceMetadata) response.get(RESPONSE_BODY);
 	}
 
-	private String assemblePathForResourceMetadata(String dataDivider, String recordId) {
-		return baseUrl + dataDivider + "/" + RESOURCE_FOLDER + recordId + FCR_METADATA;
+	private String assemblePathForRecordMetadata(String dataDivider, String recordId) {
+		return assemblePathForRecord(dataDivider, recordId) + FCR_METADATA;
 	}
 
 	private Map<String, Object> callFedoraReadResourceMetadata(String path, String resourceId) {
@@ -327,7 +315,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void updateRecord(String dataDivider, String recordId, String fedoraXML) {
-		String path = ensemblePathForRecord(dataDivider, recordId);
+		String path = assemblePathForRecord(dataDivider, recordId);
 		ensureRecordExistsForUpdate(path, recordId);
 		updateRecordInFedora(path, recordId, fedoraXML);
 	}
@@ -402,7 +390,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	}
 
 	private HttpHandler setHttpHandlerForPatch(String dataDivider, String resourceId) {
-		String path = assemblePathForResourceMetadata(dataDivider, resourceId);
+		String path = assemblePathForRecordMetadata(dataDivider, resourceId);
 		HttpHandler httpHandler = factorHttpHandler(path, PATCH);
 		httpHandler.setRequestProperty(CONTENT_TYPE, "application/sparql-update");
 		return httpHandler;
@@ -410,8 +398,13 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	private String createBodyForUpdateResourceMetadata(
 			ResourceMetadataToUpdate resourceMetadataToUpdate) {
-		return MessageFormat.format(UPDATE_RESPONSE_METADATA_BODY,
-				resourceMetadataToUpdate.originalFileName(), resourceMetadataToUpdate.mimeType());
+		String updateResponseBody = """
+				PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
+				INSERT '{'<> ebucore:filename "{0}" . <> ebucore:hasMimeType "{1}" .'}'
+				WHERE '{}'
+				""";
+		return MessageFormat.format(updateResponseBody, resourceMetadataToUpdate.originalFileName(),
+				resourceMetadataToUpdate.mimeType());
 	}
 
 	private void throwExceptionForUpdateResourceMetadataIfNotOk(int responseCode,
@@ -429,7 +422,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 	@Override
 	public void updateResource(String dataDivider, String resourceId, InputStream resource,
 			String mimeType) {
-		String path = assemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForRecord(dataDivider, resourceId);
 		ensureResourceExistsForUpdate(path, resourceId);
 		updateResourceInFedora(path, resourceId, resource, mimeType);
 	}
@@ -457,7 +450,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void deleteRecord(String dataDivider, String recordId) {
-		String path = ensemblePathForRecord(dataDivider, recordId);
+		String path = assemblePathForRecord(dataDivider, recordId);
 		deleteRecordInFedora(path, recordId);
 		purgeRecordInFedora(path, recordId);
 	}
@@ -489,7 +482,7 @@ public class FedoraAdapterImp implements FedoraAdapter {
 
 	@Override
 	public void deleteResource(String dataDivider, String resourceId) {
-		String path = assemblePathForResource(dataDivider, resourceId);
+		String path = assemblePathForRecord(dataDivider, resourceId);
 		deleteResourceInFedora(path, resourceId);
 		purgeResourceInFedora(path, resourceId);
 	}

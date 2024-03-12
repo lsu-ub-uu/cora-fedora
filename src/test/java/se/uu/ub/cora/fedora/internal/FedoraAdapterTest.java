@@ -56,8 +56,7 @@ public class FedoraAdapterTest {
 	private String baseUrl = "http://localhost:38088/fcrepo/rest/";
 	private String dataDivider = "someDataDivider";
 	private String mimeType = "image/jpg";
-	String expectedRecordPath = baseUrl + dataDivider + "/record/";
-	String expectedResourcePath = baseUrl + dataDivider + "/resource/";
+	String expectedRecordPath = baseUrl + dataDivider + ":";
 	private String recordXML = "<somexml></somexml>";
 
 	private HttpHandlerFactorySpy httpHandlerFactory;
@@ -107,21 +106,21 @@ public class FedoraAdapterTest {
 		httpHandlerFactory.MRV.setReturnValues("factor", List.of(httpHandlerSpy0, httpHandlerSpy1),
 				expectedRecordPath + SOME_RECORD_ID);
 		httpHandlerFactory.MRV.setReturnValues("factor", List.of(httpHandlerSpy0, httpHandlerSpy1),
-				expectedResourcePath + SOME_RESOURCE_ID);
+				expectedRecordPath + SOME_RESOURCE_ID);
 	}
 
 	private void setTombstoneSpecificValuesHttpHandlerFactory() {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
 				expectedRecordPath + SOME_RECORD_ID + FCR_TOMBSTONE);
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
 	}
 
 	private void setMetadataSpecificValuesHttpHandlerFactory() {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
 				expectedRecordPath + SOME_RECORD_ID + FCR_METADATA);
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_METADATA);
 	}
 
 	@Test
@@ -240,13 +239,11 @@ public class FedoraAdapterTest {
 
 		fedora.createResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
-		httpHandlerFactory.MCR.assertParameters("factor", 1,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 1, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "PUT");
 		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type", mimeType);
 		httpHandlerSpy1.MCR.assertParameters("setStreamOutput", 0, resource);
@@ -300,7 +297,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testCreateResourceAnyOtherErrorOnFactor() {
 		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
-				expectedResourcePath + SOME_RESOURCE_ID);
+				expectedRecordPath + SOME_RESOURCE_ID);
 		try {
 			fedora.createResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
 			fail("It failed");
@@ -396,8 +393,7 @@ public class FedoraAdapterTest {
 
 		InputStream resourceFromFedora = fedora.readResource(dataDivider, SOME_RESOURCE_ID);
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "GET");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy0.MCR.assertMethodNotCalled("getResponseText");
@@ -410,7 +406,7 @@ public class FedoraAdapterTest {
 		fedora.readResourceMetadata(dataDivider, SOME_RESOURCE_ID);
 
 		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_METADATA);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "GET");
 		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Accept",
 				"application/ld+json");
@@ -506,7 +502,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testReadResourceErrorOnHttpHandler() {
 		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
-				expectedResourcePath + SOME_RESOURCE_ID);
+				expectedRecordPath + SOME_RESOURCE_ID);
 		try {
 			fedora.readResource(dataDivider, SOME_RESOURCE_ID);
 			fail("It failed");
@@ -636,13 +632,11 @@ public class FedoraAdapterTest {
 
 		fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
-		httpHandlerFactory.MCR.assertParameters("factor", 1,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 1, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "PUT");
 		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type", mimeType);
 		httpHandlerSpy1.MCR.assertParameters("setStreamOutput", 0, resource);
@@ -662,8 +656,7 @@ public class FedoraAdapterTest {
 					"updating", RESOURCE, SOME_RESOURCE_ID));
 		}
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
@@ -684,8 +677,7 @@ public class FedoraAdapterTest {
 
 		}
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
@@ -705,8 +697,7 @@ public class FedoraAdapterTest {
 					SOME_RESOURCE_ID, RESOURCE, INTERNAL_SERVER_ERROR));
 		}
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "HEAD");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
@@ -716,7 +707,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testUpdateResourceErrorOnHttpHandler() {
 		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
-				expectedResourcePath + SOME_RESOURCE_ID);
+				expectedRecordPath + SOME_RESOURCE_ID);
 		try {
 			fedora.updateResource(dataDivider, SOME_RESOURCE_ID, resource, mimeType);
 			fail("It failed");
@@ -812,7 +803,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testDeleteResourceOk() throws Exception {
 		httpHandlerFactory.MRV.setSpecificReturnValuesSupplier("factor", () -> httpHandlerSpy1,
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
 
 		httpHandlerSpy0.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
 		httpHandlerSpy1.MRV.setDefaultReturnValuesSupplier("getResponseCode", () -> NO_CONTENT);
@@ -821,13 +812,12 @@ public class FedoraAdapterTest {
 
 		httpHandlerFactory.MCR.assertNumberOfCallsToMethod("factor", 2);
 
-		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID);
+		httpHandlerFactory.MCR.assertParameters("factor", 0, expectedRecordPath + SOME_RESOURCE_ID);
 		httpHandlerSpy0.MCR.assertParameters("setRequestMethod", 0, "DELETE");
 		httpHandlerSpy0.MCR.assertMethodWasCalled("getResponseCode");
 
 		httpHandlerFactory.MCR.assertParameters("factor", 1,
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_TOMBSTONE);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "DELETE");
 		httpHandlerSpy1.MCR.assertMethodWasCalled("getResponseCode");
 		httpHandlerSpy1.MCR.assertReturn("getResponseCode", 0, NO_CONTENT);
@@ -882,7 +872,7 @@ public class FedoraAdapterTest {
 		fedora.updateResourceMetadata(dataDivider, SOME_RESOURCE_ID, metadataResourceToUpdate);
 
 		httpHandlerFactory.MCR.assertParameters("factor", 0,
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_METADATA);
 		httpHandlerSpy1.MCR.assertParameters("setRequestMethod", 0, "PATCH");
 		httpHandlerSpy1.MCR.assertParameters("setRequestProperty", 0, "Content-Type",
 				"application/sparql-update");
@@ -930,7 +920,7 @@ public class FedoraAdapterTest {
 	@Test
 	public void testUpdateResourceMetadataInternalException() throws Exception {
 		httpHandlerFactory.MRV.setThrowException("factor", new RuntimeException("errorFromSpy"),
-				expectedResourcePath + SOME_RESOURCE_ID + FCR_METADATA);
+				expectedRecordPath + SOME_RESOURCE_ID + FCR_METADATA);
 		try {
 			fedora.updateResourceMetadata(dataDivider, SOME_RESOURCE_ID, metadataResourceToUpdate);
 			fail();
