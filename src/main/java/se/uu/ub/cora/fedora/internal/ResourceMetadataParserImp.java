@@ -44,7 +44,8 @@ public class ResourceMetadataParserImp implements ResourceMetadataParser {
 		try {
 			return tryToParse(jsonString);
 		} catch (Exception e) {
-			throw ResourceMetadataParserException.withMessage("Failed to parse resource metadata");
+			throw ResourceMetadataParserException
+					.withMessageAndException("Failed to parse resource metadata", e);
 		}
 	}
 

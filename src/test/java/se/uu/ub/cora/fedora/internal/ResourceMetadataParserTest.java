@@ -20,6 +20,8 @@ package se.uu.ub.cora.fedora.internal;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -77,12 +79,18 @@ public class ResourceMetadataParserTest {
 		setUpChecksumSpy();
 	}
 
-	@Test(expectedExceptions = ResourceMetadataParserException.class, expectedExceptionsMessageRegExp = ""
-			+ "Failed to parse resource metadata")
+	@Test
 	public void parseErrorThrowExceptionTest() throws Exception {
 		jsonParser.MRV.setAlwaysThrowException(PARSE_STRING_AS_ARRAY,
 				new RuntimeException("parse error"));
-		parser.parse("");
+		try {
+			parser.parse("");
+			fail("It should throw an exception");
+		} catch (Exception e) {
+			assertTrue(e instanceof ResourceMetadataParserException);
+			assertEquals(e.getMessage(), "Failed to parse resource metadata");
+			assertEquals(e.getCause().getMessage(), "parse error");
+		}
 	}
 
 	@Test
