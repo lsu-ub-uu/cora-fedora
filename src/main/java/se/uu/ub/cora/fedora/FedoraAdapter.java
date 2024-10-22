@@ -190,7 +190,7 @@ public interface FedoraAdapter {
 	 * If a record with the same id is not found in fedora a {@link FedoraNotFoundException} will be
 	 * thrown.
 	 * 
-	 * If there are problems while updating the record in Fedora a {@link FedoraException} will be
+	 * If there are problems while deleting the record in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 * 
 	 * @param dataDivider
@@ -206,7 +206,7 @@ public interface FedoraAdapter {
 	 * If a resource with the same id is not found in fedora a {@link FedoraNotFoundException} will
 	 * be thrown.
 	 * 
-	 * If there are problems while updating the resource in Fedora a {@link FedoraException} will be
+	 * If there are problems while deleting the resource in Fedora a {@link FedoraException} will be
 	 * thrown.
 	 * 
 	 * @param dataDivider
